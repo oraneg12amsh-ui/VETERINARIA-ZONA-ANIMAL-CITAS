@@ -1,0 +1,318 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos y Citas - Veterinaria Zona Animal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Iconos de Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Contenedor Principal -->
+    <div class="min-h-screen flex flex-col lg:flex-row p-4 gap-4">
+
+        <!-- Columna Izquierda: Catálogo de Productos y Servicios -->
+        <div class="lg:w-3/5 flex flex-col h-full">
+            <header class="mb-4">
+                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="ph-bold ph-paw-print text-cyan-600"></i>
+                    Veterinaria Zona Animal
+                </h1>
+                <p class="text-gray-500 mt-1">Explora nuestros productos y agenda una cita.</p>
+            </header>
+            
+            <div id="items-container" class="bg-white p-4 rounded-2xl shadow-md flex-grow overflow-y-auto" style="max-height: 85vh;">
+                <!-- El catálogo se generará aquí -->
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Carrito y Formulario de Pedido -->
+        <div class="lg:w-2/5 flex flex-col">
+            <div class="bg-white rounded-2xl shadow-lg flex flex-col h-full p-6">
+                
+                <!-- Datos del Cliente -->
+                <div class="mb-4 border-b pb-4">
+                    <h2 class="text-xl font-semibold mb-3 flex items-center gap-2">
+                        <i class="ph-bold ph-user-circle text-cyan-600"></i>
+                        Tus Datos
+                    </h2>
+                    <div class="space-y-3">
+                        <input type="text" id="customer-name" placeholder="Tu Nombre Completo *" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50">
+                        <input type="tel" id="customer-phone" placeholder="Tu Teléfono de WhatsApp *" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50">
+                        <textarea id="customer-address" placeholder="Tu Dirección (para envíos o citas a domicilio)" class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 h-20 resize-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- Carrito de Pedidos -->
+                <div id="cart-container" class="flex-grow overflow-y-auto pr-2">
+                    <p id="empty-cart-message" class="text-center text-gray-400 my-16">
+                        <i class="ph-light ph-shopping-cart text-6xl"></i><br>
+                        Tu carrito está vacío
+                    </p>
+                    <!-- Secciones de productos y citas se agregarán aquí -->
+                    <div id="cart-products-section"></div>
+                    <div id="cart-appointments-section"></div>
+                </div>
+
+                <!-- Resumen y Botón Final -->
+                <div class="border-t pt-4 mt-4 space-y-3">
+                    <div class="flex justify-between font-bold text-2xl text-cyan-700">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                    <button onclick="processOrder()" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2 text-lg">
+                        <i class="ph-bold ph-whatsapp-logo"></i>
+                        Realizar Pedido por WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS ---
+        const database = {
+            "Productos": [
+                { id: 'p1', name: 'Alimento para Cachorro 3kg', price: 350.00, type: 'product' },
+                { id: 'p2', name: 'Alimento para Adulto 10kg', price: 890.00, type: 'product' },
+                { id: 'p3', name: 'Collar Antipulgas', price: 250.00, type: 'product' },
+                { id: 'p4', name: 'Juguete Hueso de Goma', price: 120.50, type: 'product' },
+            ],
+            "Servicios": [
+                { id: 's1', name: 'Consulta General', price: 400.00, type: 'service' },
+                { id: 's2', name: 'Vacuna Puppy', price: 380.00, type: 'service' },
+                { id: 's3', name: 'Estética Canina', price: 550.00, type: 'service' },
+                { id: 's4', name: 'Desparasitación', price: 200.00, type: 'service' },
+            ]
+        };
+        const DELIVERY_ITEM = { id: 'delivery', name: 'Servicio a Domicilio', price: 50.00, type: 'service_fee' };
+
+        // --- ESTADO DE LA APLICACIÓN ---
+        let cart = []; // Almacena los productos y servicios seleccionados
+
+        // --- ELEMENTOS DEL DOM ---
+        const itemsContainer = document.getElementById('items-container');
+        const cartContainer = document.getElementById('cart-container');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const totalEl = document.getElementById('total');
+        const customerNameEl = document.getElementById('customer-name');
+        const customerPhoneEl = document.getElementById('customer-phone');
+        const customerAddressEl = document.getElementById('customer-address');
+        const cartProductsSection = document.getElementById('cart-products-section');
+        const cartAppointmentsSection = document.getElementById('cart-appointments-section');
+
+        // --- FUNCIONES DE RENDERIZADO ---
+        function renderCatalog() {
+            itemsContainer.innerHTML = '';
+            for (const category in database) {
+                const categoryTitle = document.createElement('h3');
+                categoryTitle.className = 'text-xl font-semibold text-gray-700 mt-4 mb-3 first:mt-0';
+                categoryTitle.textContent = category;
+                itemsContainer.appendChild(categoryTitle);
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3';
+                database[category].forEach(item => {
+                    const itemButton = document.createElement('button');
+                    itemButton.className = 'bg-gray-50 p-3 rounded-lg text-left hover:bg-cyan-100 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500';
+                    itemButton.onclick = () => addItemToCart(item);
+                    itemButton.innerHTML = `<p class="font-semibold text-gray-800">${item.name}</p><p class="text-cyan-600 font-bold mt-1">$${item.price.toFixed(2)}</p>`;
+                    grid.appendChild(itemButton);
+                });
+                itemsContainer.appendChild(grid);
+            }
+        }
+
+        function updateCart() {
+            emptyCartMessage.style.display = cart.length === 0 ? 'block' : 'none';
+            cartProductsSection.innerHTML = '';
+            cartAppointmentsSection.innerHTML = '';
+
+            const products = cart.filter(item => item.type === 'product');
+            const services = cart.filter(item => item.type === 'service');
+            
+            // Renderizar productos
+            if (products.length > 0) {
+                let productsHtml = '<h3 class="text-lg font-semibold text-gray-700 mb-2">Productos en tu pedido:</h3><div class="space-y-2">';
+                products.forEach((item, index) => {
+                    productsHtml += `
+                        <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg fade-in">
+                            <span>${item.name}</span>
+                            <div class="flex items-center gap-3">
+                                <span class="font-semibold">$${item.price.toFixed(2)}</span>
+                                <button onclick="removeItemFromCart(${index})" class="text-red-500 hover:text-red-700"><i class="ph-bold ph-x-circle text-xl"></i></button>
+                            </div>
+                        </div>`;
+                });
+                productsHtml += '</div>';
+                cartProductsSection.innerHTML = productsHtml;
+            }
+
+            // Renderizar citas
+            if (services.length > 0) {
+                let appointmentsHtml = '<h3 class="text-lg font-semibold text-gray-700 mt-4 mb-2">Agendar Cita(s):</h3><div class="space-y-4">';
+                services.forEach((item, index) => {
+                    const originalIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+                    appointmentsHtml += `
+                        <div class="bg-gray-50 p-3 rounded-lg fade-in">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="font-semibold">${item.name}</span>
+                                <button onclick="removeItemFromCart(${originalIndex})" class="text-red-500 hover:text-red-700"><i class="ph-bold ph-x-circle text-xl"></i></button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <input type="date" id="date-${item.id}" class="w-full p-2 border border-gray-300 rounded-lg">
+                                <select id="time-${item.id}" class="w-full p-2 border border-gray-300 rounded-lg">
+                                    <option>9:00 AM - 12:00 PM</option>
+                                    <option>12:00 PM - 3:00 PM</option>
+                                    <option>3:00 PM - 6:00 PM</option>
+                                </select>
+                                <div class="col-span-2 flex gap-4 mt-1">
+                                    <label><input type="radio" name="location-${item.id}" value="Local" checked onchange="updateDeliveryFee()"> En Local</label>
+                                    <label><input type="radio" name="location-${item.id}" value="Domicilio" onchange="updateDeliveryFee()"> A Domicilio</label>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                appointmentsHtml += '</div>';
+                cartAppointmentsSection.innerHTML = appointmentsHtml;
+            }
+
+            // Calcular total
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            totalEl.textContent = `$${total.toFixed(2)}`;
+        }
+        
+        // --- LÓGICA DEL CARRITO Y PEDIDO ---
+        function addItemToCart(item) {
+            // Evitar duplicados
+            if (cart.some(cartItem => cartItem.id === item.id)) {
+                alert("Este artículo ya está en tu carrito.");
+                return;
+            }
+            cart.push(item);
+            updateCart();
+            updateDeliveryFee();
+        }
+
+        function removeItemFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+            updateDeliveryFee();
+        }
+
+        function updateDeliveryFee() {
+            // Verificar si alguna cita es a domicilio
+            const isHomeService = cart.some(item => {
+                if (item.type === 'service') {
+                    const radio = document.querySelector(`input[name="location-${item.id}"]:checked`);
+                    return radio && radio.value === 'Domicilio';
+                }
+                return false;
+            });
+
+            const hasDeliveryFee = cart.some(item => item.id === 'delivery');
+
+            if (isHomeService && !hasDeliveryFee) {
+                cart.push(DELIVERY_ITEM);
+            } else if (!isHomeService && hasDeliveryFee) {
+                const deliveryIndex = cart.findIndex(item => item.id === 'delivery');
+                if (deliveryIndex > -1) {
+                    cart.splice(deliveryIndex, 1);
+                }
+            }
+            updateCart();
+        }
+
+        function processOrder() {
+            // Validación de datos
+            const name = customerNameEl.value.trim();
+            const phone = customerPhoneEl.value.trim();
+            const address = customerAddressEl.value.trim();
+
+            if (cart.length === 0) {
+                alert("Tu carrito está vacío. Agrega productos o servicios para continuar.");
+                return;
+            }
+            if (!name || !phone) {
+                alert("Por favor, ingresa tu nombre y teléfono de WhatsApp.");
+                return;
+            }
+            const needsAddress = cart.some(item => {
+                 if (item.type === 'service') {
+                    const radio = document.querySelector(`input[name="location-${item.id}"]:checked`);
+                    return radio && radio.value === 'Domicilio';
+                }
+                return item.type === 'product'; // Productos también necesitan dirección para envío
+            });
+
+            if (needsAddress && !address) {
+                alert("Por favor, ingresa tu dirección para el envío o la cita a domicilio.");
+                return;
+            }
+
+            // Construir mensaje de WhatsApp
+            let message = `🐾 *Nuevo Pedido de Veterinaria Zona Animal* 🐾\n\n`;
+            message += `*Datos del Cliente:*\n`;
+            message += `*Nombre:* ${name}\n`;
+            message += `*Teléfono:* ${phone}\n`;
+            if (address) message += `*Dirección:* ${address}\n\n`;
+            
+            const products = cart.filter(item => item.type === 'product');
+            const services = cart.filter(item => item.type === 'service');
+
+            if (products.length > 0) {
+                message += `*Productos Solicitados:*\n`;
+                products.forEach(p => {
+                    message += `▪️ ${p.name} - $${p.price.toFixed(2)}\n`;
+                });
+                message += `\n`;
+            }
+
+            if (services.length > 0) {
+                message += `*Citas Agendadas:*\n`;
+                services.forEach(s => {
+                    const date = document.getElementById(`date-${s.id}`).value;
+                    const time = document.getElementById(`time-${s.id}`).value;
+                    const location = document.querySelector(`input[name="location-${s.id}"]:checked`).value;
+                    message += `▪️ *Servicio:* ${s.name}\n`;
+                    message += `   *Fecha:* ${date || 'Sin especificar'}\n`;
+                    message += `   *Horario:* ${time}\n`;
+                    message += `   *Lugar:* ${location}\n\n`;
+                });
+            }
+
+            message += `----------------------------------\n`;
+            message += `*TOTAL DEL PEDIDO: $${totalEl.textContent.replace('$', '')}*\n\n`;
+            message += `¡Gracias! Nos pondremos en contacto para confirmar.`;
+
+            const encodedMessage = encodeURIComponent(message);
+            const businessPhoneNumber = "522452070033";
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${businessPhoneNumber}&text=${encodedMessage}`;
+            
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCatalog();
+            updateCart();
+        });
+    </script>
+</body>
+</html>
