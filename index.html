@@ -25,12 +25,9 @@
                 <p class="text-gray-500 mt-1">Explora nuestros productos y agenda tu cita.</p>
             </header>
             
-            <!-- NUEVO: Barra de Búsqueda -->
             <div class="mb-4">
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                        <i class="ph-bold ph-magnifying-glass text-gray-400"></i>
-                    </span>
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="ph-bold ph-magnifying-glass text-gray-400"></i></span>
                     <input type="text" id="search-input" placeholder="Buscar productos o servicios..." class="w-full p-3 pl-10 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
                 </div>
             </div>
@@ -64,7 +61,7 @@
         <div class="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-sm mx-4 fade-in">
             <i class="ph-bold ph-check-circle text-8xl text-green-500 mb-4"></i>
             <h3 class="text-2xl font-bold mb-2">¡Pedido Enviado!</h3>
-            <p class="text-gray-600 mb-6">Hemos recibido tu pedido. Nos pondremos en contacto contigo para confirmar.</p>
+            <p class="text-gray-600 mb-6">Hemos recibido tu pedido. La notificación se está abriendo en WhatsApp.</p>
             <button onclick="window.closeSuccessModal()" class="bg-cyan-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-cyan-700">Aceptar</button>
         </div>
     </div>
@@ -74,7 +71,6 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
           apiKey: "AIzaSyCC-swKUQGU93xe_bc7Qts2nhFCji3ZeDs",
           authDomain: "zona-animal-pedidos.firebaseapp.com",
@@ -86,88 +82,71 @@
         const appId = firebaseConfig.projectId;
         let db;
 
-        // --- ESTADO DE LA APLICACIÓN ---
         let allProducts = [];
         let cart = [];
         const DELIVERY_ITEM = { id: 'delivery', name: 'Servicio a Domicilio', price: 50.00, type: 'service_fee', quantity: 1 };
-        const PRODUCT_SHIPPING_ITEM = { id: 'product_shipping', name: 'Costo de Envío', price: 15.00, type: 'shipping_fee', quantity: 1 };
 
-        // --- DOM ELEMENTS ---
         const itemsContainer = document.getElementById('items-container');
         const emptyCartMessage = document.getElementById('empty-cart-message');
         const totalEl = document.getElementById('total');
         const cartProductsSection = document.getElementById('cart-products-section');
         const cartAppointmentsSection = document.getElementById('cart-appointments-section');
         const successModal = document.getElementById('success-modal');
-        const submitOrderBtn = document.getElementById('submit-order-btn');
         const cartWrapper = document.getElementById('cart-wrapper');
         const searchInput = document.getElementById('search-input');
         
-        // --- INICIALIZACIÓN ---
         async function initFirebase() {
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
-                const auth = getAuth(app);
-                await signInAnonymously(auth);
+                await signInAnonymously(getAuth(app));
                 listenToProducts();
             } catch (error) {
-                console.error("Error al inicializar Firebase:", error);
-                itemsContainer.innerHTML = '<p class="text-red-500 text-center">No se pudo cargar el catálogo de productos.</p>';
+                console.error("Error al inicializar:", error);
+                itemsContainer.innerHTML = `<p class="text-red-500 text-center">No se pudo cargar el catálogo.</p>`;
             }
         }
 
         function listenToProducts() {
-            const productsRef = collection(db, `/artifacts/${appId}/public/data/products`);
-            onSnapshot(productsRef, (snapshot) => {
-                allProducts = snapshot.docs.map(doc => ({ fbId: doc.id, ...doc.data() }));
+            onSnapshot(collection(db, `/artifacts/${appId}/public/data/products`), (snapshot) => {
+                allProducts = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderCatalog();
             }, (error) => {
                 console.error("Error al cargar productos:", error);
-                itemsContainer.innerHTML = '<p class="text-red-500 text-center">Error al cargar el catálogo.</p>';
+                itemsContainer.innerHTML = `<p class="text-red-500 text-center">Error al cargar catálogo.</p>`;
             });
         }
 
-        // --- RENDERIZADO ---
         function renderCatalog() {
             const searchTerm = searchInput.value.toLowerCase();
             const filteredProducts = allProducts.filter(p => p.name.toLowerCase().includes(searchTerm));
-
             itemsContainer.innerHTML = '';
             
+            if (allProducts.length === 0) {
+                itemsContainer.innerHTML = `<p class="text-center text-gray-500 my-16">Cargando...</p>`;
+                return;
+            }
             if (filteredProducts.length === 0) {
-                itemsContainer.innerHTML = `<p class="text-center text-gray-500 my-16">No se encontraron productos para "${searchInput.value}".</p>`;
+                itemsContainer.innerHTML = `<p class="text-center text-gray-500 my-16">No se encontraron productos.</p>`;
                 return;
             }
 
-            const categories = {};
-            filteredProducts.forEach(p => {
-                if (!categories[p.category]) categories[p.category] = [];
-                categories[p.category].push(p);
-            });
+            const categories = filteredProducts.reduce((acc, p) => {
+                (acc[p.category] = acc[p.category] || []).push(p);
+                return acc;
+            }, {});
 
             for (const category in categories) {
-                let categoryHtml = `<h3 class="text-2xl font-bold text-gray-800 mt-6 mb-4 first:mt-0">${category}</h3>`;
-                if (category === "Agenda de Citas" && searchTerm === '') { // Solo mostrar si no se está buscando
-                    categoryHtml += `<div class="bg-cyan-50 border-l-4 border-cyan-500 text-cyan-800 p-4 rounded-r-lg mb-4"><p class="font-bold">Horarios:</p><p>Lunes a Domingo, 10-4 PM y 6-9 PM</p></div>`;
+                itemsContainer.innerHTML += `<h3 class="text-2xl font-bold text-gray-800 mt-6 mb-4 first:mt-0">${category}</h3>`;
+                if (category === "Agenda de Citas" && !searchTerm) {
+                    itemsContainer.innerHTML += `<div class="bg-cyan-50 border-l-4 border-cyan-500 text-cyan-800 p-4 rounded-r-lg mb-4"><p class="font-bold">Horarios:</p><p>Lun-Dom, 10-4 PM y 6-9 PM</p></div>`;
                 }
-                itemsContainer.innerHTML += categoryHtml;
-
                 const grid = document.createElement('div');
-                // Columnas responsivas: 1 en móvil, 2 en tablet, 3 en desktop
                 grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4';
                 categories[category].forEach(item => {
                     const itemCard = document.createElement('div');
                     itemCard.className = 'bg-gray-50 rounded-lg text-left hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden';
-                    
-                    itemCard.innerHTML = `
-                        <img src="${item.imageUrl || 'https://placehold.co/300x200/eee/ccc?text=Producto'}" alt="${item.name}" class="w-full h-32 object-cover">
-                        <div class="p-3 flex flex-col flex-grow">
-                            <p class="font-semibold text-gray-900 flex-grow">${item.name}</p>
-                            <p class="text-cyan-600 font-bold text-xl mt-2">$${item.price.toFixed(2)}</p>
-                        </div>
-                        <button onclick="window.addItemToCart('${item.id}')" class="bg-cyan-600 text-white font-bold py-2 w-full mt-2 hover:bg-cyan-700 transition-colors">Agregar</button>
-                    `;
+                    itemCard.innerHTML = `<img src="${item.imageUrl || 'https://placehold.co/300x200/eee/ccc?text=Producto'}" alt="${item.name}" class="w-full h-32 object-cover"><div class="p-3 flex flex-col flex-grow"><p class="font-semibold text-gray-900 flex-grow">${item.name}</p><p class="text-cyan-600 font-bold text-xl mt-2">$${(item.price||0).toFixed(2)}</p></div><button onclick="window.addItemToCart('${item.id}')" class="bg-cyan-600 text-white font-bold py-2 w-full mt-2 hover:bg-cyan-700">Agregar</button>`;
                     grid.appendChild(itemCard);
                 });
                 itemsContainer.appendChild(grid);
@@ -175,114 +154,85 @@
         }
         
         function updateCart() {
-            // Lógica de envíos
             const isHomeService = cart.some(item => item.type === 'service' && document.querySelector(`input[name="location-${item.id}"]:checked`)?.value === 'Domicilio');
-            const hasServiceDeliveryFee = cart.some(item => item.id === 'delivery');
-            if (isHomeService && !hasServiceDeliveryFee) cart.push({ ...DELIVERY_ITEM });
-            else if (!isHomeService && hasServiceDeliveryFee) cart.splice(cart.findIndex(i => i.id === 'delivery'), 1);
+            const hasFee = cart.some(item => item.id === 'delivery');
+            if (isHomeService && !hasFee) cart.push({ ...DELIVERY_ITEM });
+            else if (!isHomeService && hasFee) cart.splice(cart.findIndex(i => i.id === 'delivery'), 1);
 
-            const products = cart.filter(item => item.type === 'product');
-            const productsSubtotal = products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const hasProductShippingFee = cart.some(item => item.id === 'product_shipping');
-            if (products.length > 0 && productsSubtotal < 100) {
-                if (!hasProductShippingFee) cart.push({ ...PRODUCT_SHIPPING_ITEM });
-            } else {
-                if (hasProductShippingFee) cart.splice(cart.findIndex(i => i.id === 'product_shipping'), 1);
-            }
-            
-            // Lógica de renderizado
             emptyCartMessage.style.display = cart.length === 0 ? 'block' : 'none';
-            cartProductsSection.innerHTML = '';
-            cartAppointmentsSection.innerHTML = '';
-            const servicesAndFees = cart.filter(item => item.type !== 'product');
-            
-            if (products.length > 0) {
-                let productsHtml = '<h3 class="text-lg font-semibold text-gray-700 mb-2">Productos:</h3><div class="space-y-2">';
-                products.forEach(item => {
-                    productsHtml += `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg fade-in"><span class="flex-grow pr-2">${item.name}</span><div class="flex items-center gap-3"><div class="flex items-center gap-2 font-semibold"><button onclick="window.decreaseQuantity('${item.id}')" class="px-2 rounded bg-gray-200 hover:bg-gray-300">-</button><span>${item.quantity}</span><button onclick="window.increaseQuantity('${item.id}')" class="px-2 rounded bg-gray-200 hover:bg-gray-300">+</button></div><span class="font-semibold w-16 text-right">$${(item.price * item.quantity).toFixed(2)}</span><button onclick="window.removeProductFromCart('${item.id}')" class="text-red-500 hover:text-red-700"><i class="ph-bold ph-trash text-xl"></i></button></div></div>`;
-                });
-                cartProductsSection.innerHTML = productsHtml + '</div>';
-            }
-            
-            if (servicesAndFees.length > 0) {
-                let servicesHtml = '<h3 class="text-lg font-semibold text-gray-700 mt-4 mb-2">Cita(s) y Cargos:</h3><div class="space-y-4">';
-                servicesAndFees.forEach(item => {
-                    if (item.type === 'service') {
-                        servicesHtml += `<div class="bg-gray-50 p-3 rounded-lg fade-in"><div class="flex justify-between items-center mb-3"><span class="font-semibold">${item.name}</span><button onclick="window.removeServiceFromCart('${item.id}')" class="text-red-500 hover:text-red-700"><i class="ph-bold ph-trash text-xl"></i></button></div><div class="grid grid-cols-2 gap-2 text-sm"><input type="date" id="date-${item.id}" class="w-full p-2 border border-gray-300 rounded-lg"><select id="time-${item.id}" class="w-full p-2 border border-gray-300 rounded-lg"><option>10AM-4PM</option><option>6PM-9PM</option></select><div class="col-span-2 flex gap-4 mt-1"><label><input type="radio" name="location-${item.id}" value="Local" checked onchange="window.updateCart()"> En Local</label><label><input type="radio" name="location-${item.id}" value="Domicilio" onchange="window.updateCart()"> A Domicilio</label></div></div></div>`;
-                    } else if (item.type === 'service_fee' || item.type === 'shipping_fee') {
-                         servicesHtml += `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg fade-in"><span>${item.name}</span><span class="font-semibold">$${item.price.toFixed(2)}</span></div>`;
-                    }
-                });
-                cartAppointmentsSection.innerHTML = servicesHtml + '</div>';
-            }
-            
-            totalEl.textContent = `$${cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0).toFixed(2)}`;
+            const products = cart.filter(item => item.type === 'product');
+            const services = cart.filter(item => item.type !== 'product');
+            cartProductsSection.innerHTML = products.length > 0 ? `<h3 class="text-lg font-semibold text-gray-700 mb-2">Productos:</h3><div class="space-y-2">${products.map(item => `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg fade-in"><span class="flex-grow pr-2">${item.name}</span><div class="flex items-center gap-3"><div class="flex items-center gap-2 font-semibold"><button onclick="window.decreaseQuantity('${item.id}')" class="px-2 rounded bg-gray-200">-</button><span>${item.quantity}</span><button onclick="window.increaseQuantity('${item.id}')" class="px-2 rounded bg-gray-200">+</button></div><span class="font-semibold w-16 text-right">$${(item.price * item.quantity).toFixed(2)}</span><button onclick="window.removeProductFromCart('${item.id}')" class="text-red-500"><i class="ph-bold ph-trash text-xl"></i></button></div></div>`).join('')}</div>` : '';
+            cartAppointmentsSection.innerHTML = services.length > 0 ? `<h3 class="text-lg font-semibold text-gray-700 mt-4 mb-2">Citas y Cargos:</h3><div class="space-y-4">${services.map(item => item.type === 'service' ? `<div class="bg-gray-50 p-3 rounded-lg fade-in"><div class="flex justify-between items-center mb-3"><span class="font-semibold">${item.name}</span><button onclick="window.removeServiceFromCart('${item.id}')" class="text-red-500"><i class="ph-bold ph-trash text-xl"></i></button></div><div class="grid grid-cols-2 gap-2 text-sm"><input type="date" id="date-${item.id}" class="w-full p-2 border rounded"><select id="time-${item.id}" class="w-full p-2 border rounded"><option>10AM-4PM</option><option>6PM-9PM</option></select><div class="col-span-2 flex gap-4 mt-1"><label><input type="radio" name="location-${item.id}" value="Local" checked onchange="window.updateCart()"> Local</label><label><input type="radio" name="location-${item.id}" value="Domicilio" onchange="window.updateCart()"> Domicilio</label></div></div></div>` : `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg fade-in"><span>${item.name}</span><span class="font-semibold">$${item.price.toFixed(2)}</span></div>`).join('')}</div>` : '';
+            totalEl.textContent = `$${cart.reduce((s, i) => s + (i.price * (i.quantity || 1)), 0).toFixed(2)}`;
         }
 
-        // --- LÓGICA DEL CARRITO ---
         window.addItemToCart = (itemId) => {
             const itemData = allProducts.find(p => p.id === itemId);
             if (!itemData) return;
-
             const existingItem = cart.find(cartItem => cartItem.id === itemId);
             if (itemData.type === 'service') {
                 if (existingItem) return;
                 cart.push({ ...itemData, quantity: 1 });
-            } else if (itemData.type === 'product') {
-                if (existingItem) {
-                    existingItem.quantity++;
-                } else {
-                    cart.push({ ...itemData, quantity: 1 });
-                }
+            } else {
+                if (existingItem) existingItem.quantity++;
+                else cart.push({ ...itemData, quantity: 1 });
             }
             updateCart();
             cartWrapper.classList.add('cart-highlight');
             setTimeout(() => cartWrapper.classList.remove('cart-highlight'), 700);
         }
-
-        window.increaseQuantity = (itemId) => { const item = cart.find(i => i.id === itemId); if (item) item.quantity++; updateCart(); }
-        window.decreaseQuantity = (itemId) => { const item = cart.find(i => i.id === itemId); if (item) { item.quantity--; if (item.quantity <= 0) removeProductFromCart(itemId); else updateCart(); } }
-        function removeProductFromCart(itemId) { cart = cart.filter(i => i.id !== itemId); updateCart(); }
+        
+        window.increaseQuantity = (id) => { const i = cart.find(p => p.id === id); if (i) i.quantity++; updateCart(); }
+        window.decreaseQuantity = (id) => { const i = cart.find(p => p.id === id); if (i) { i.quantity--; if (i.quantity < 1) removeProductFromCart(id); else updateCart(); } }
+        const removeProductFromCart = (id) => { cart = cart.filter(p => p.id !== id); updateCart(); }
         window.removeProductFromCart = removeProductFromCart;
-        window.removeServiceFromCart = (serviceId) => { cart = cart.filter(i => i.id !== serviceId); updateCart(); }
+        window.removeServiceFromCart = (id) => { cart = cart.filter(p => p.id !== id); updateCart(); }
         window.updateCart = updateCart;
 
-        // --- LÓGICA DEL PEDIDO ---
-        window.processOrder = async () => {
-            const customerEl = { name: document.getElementById('customer-name'), phone: document.getElementById('customer-phone'), address: document.getElementById('customer-address') };
-            if (cart.length === 0 || !customerEl.name.value || !customerEl.phone.value) return alert("Por favor, añade productos y completa tu nombre y teléfono.");
-            
-            let appointmentInfo = null;
-            const service = cart.find(item => item.type === 'service');
-            if (service) {
-                const dateValue = document.getElementById(`date-${service.id}`).value;
-                if (!dateValue) return alert("Por favor, selecciona una fecha para tu cita.");
-                appointmentInfo = { date: dateValue, time: document.getElementById(`time-${service.id}`).value, location: document.querySelector(`input[name="location-${service.id}"]:checked`).value };
-            }
-            const total = cart.reduce((s, i) => s + (i.price * (i.quantity || 1)), 0);
-            const orderData = { customerInfo: { name: customerEl.name.value, phone: customerEl.phone.value, address: customerEl.address.value }, items: cart, appointmentInfo, total: total, status: 'Pendiente', timestamp: serverTimestamp() };
+        function sendWhatsApp(orderData, orderId) {
+            const phone = "522452070033";
+            let msg = `🐾 *Nuevo Pedido: #${orderId.substring(0,6)}* 🐾\n\n*Cliente:* ${orderData.customerInfo.name}\n*Tel:* ${orderData.customerInfo.phone}\n\n*Detalles:*\n`;
+            orderData.items.forEach(i => { msg += `▪️ ${i.name} (x${i.quantity || 1})\n`; });
+            if (orderData.appointmentInfo) msg += `\n*Cita:*\n- Fecha: ${orderData.appointmentInfo.date}\n- Lugar: ${orderData.appointmentInfo.location}\n`;
+            msg += `\n*Total: $${orderData.total.toFixed(2)}*\n\nRevisa el panel de admin.`;
+            window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
 
+        window.processOrder = async () => {
+            const customer = { name: document.getElementById('customer-name').value, phone: document.getElementById('customer-phone').value, address: document.getElementById('customer-address').value };
+            if (cart.length === 0 || !customer.name || !customer.phone) return alert("Completa tus datos y añade productos.");
+            const service = cart.find(i => i.type === 'service');
+            let appointmentInfo = null;
+            if (service) {
+                const date = document.getElementById(`date-${service.id}`).value;
+                if (!date) return alert("Selecciona una fecha para tu cita.");
+                appointmentInfo = { date, time: document.getElementById(`time-${service.id}`).value, location: document.querySelector(`input[name="location-${service.id}"]:checked`).value };
+            }
+            const orderData = { customerInfo: customer, items: cart, appointmentInfo, total: cart.reduce((s, i) => s + (i.price * (i.quantity || 1)), 0), status: 'Pendiente', timestamp: serverTimestamp() };
+            const btn = document.getElementById('submit-order-btn');
             try {
-                submitOrderBtn.disabled = true;
-                submitOrderBtn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Procesando...`;
-                const ordersCollectionPath = `/artifacts/${appId}/public/data/orders`;
-                await addDoc(collection(db, ordersCollectionPath), orderData);
+                btn.disabled = true;
+                btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Procesando...`;
+                const docRef = await addDoc(collection(db, `/artifacts/${appId}/public/data/orders`), orderData);
+                sendWhatsApp(orderData, docRef.id);
                 successModal.classList.remove('hidden');
                 cart = [];
-                Object.values(customerEl).forEach(el => el.value = '');
+                document.getElementById('customer-name').value = '';
+                document.getElementById('customer-phone').value = '';
+                document.getElementById('customer-address').value = '';
                 updateCart();
             } catch (error) {
-                console.error("Error al guardar:", error);
+                console.error("Error:", error);
                 alert("Hubo un problema al enviar tu pedido.");
             } finally {
-                submitOrderBtn.disabled = false;
-                submitOrderBtn.innerHTML = `<i class="ph-bold ph-whatsapp-logo"></i> Realizar Pedido`;
+                btn.disabled = false;
+                btn.innerHTML = `<i class="ph-bold ph-whatsapp-logo"></i> Realizar Pedido`;
             }
-        }
+        };
         
         window.closeSuccessModal = () => successModal.classList.add('hidden');
 
-        // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', () => {
             initFirebase();
             updateCart();
