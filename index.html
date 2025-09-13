@@ -5,8 +5,6 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Iconos de Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -66,7 +64,6 @@
                         <i class="ph-light ph-shopping-cart text-6xl"></i><br>
                         Tu carrito está vacío
                     </p>
-                    <!-- Secciones de productos y citas se agregarán aquí -->
                     <div id="cart-products-section"></div>
                     <div id="cart-appointments-section"></div>
                 </div>
@@ -77,7 +74,7 @@
                         <span>Total:</span>
                         <span id="total">$0.00</span>
                     </div>
-                    <button onclick="processOrder()" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2 text-lg">
+                    <button id="submit-order-btn" onclick="processOrder()" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2 text-lg">
                         <i class="ph-bold ph-whatsapp-logo"></i>
                         Realizar Pedido por WhatsApp
                     </button>
@@ -85,9 +82,30 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal de Éxito -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-sm mx-4 fade-in">
+            <i class="ph-bold ph-check-circle text-8xl text-green-500 mb-4"></i>
+            <h3 class="text-2xl font-bold mb-2">¡Pedido Enviado!</h3>
+            <p class="text-gray-600 mb-6">Hemos recibido tu pedido correctamente. Nos pondremos en contacto contigo para confirmar.</p>
+            <button onclick="closeSuccessModal()" class="bg-cyan-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-cyan-700 transition-colors">Aceptar</button>
+        </div>
+    </div>
 
-    <script>
-        // --- BASE DE DATOS ---
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURACIÓN DE FIREBASE ---
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'zona-animal-app';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        let db;
+
+        // --- BASE DE DATOS LOCAL ---
         const database = {
             "Productos": [
                 { id: 'p1', name: 'Alimento para Cachorro 3kg', price: 350.00, type: 'product' },
@@ -105,7 +123,7 @@
         const DELIVERY_ITEM = { id: 'delivery', name: 'Servicio a Domicilio', price: 50.00, type: 'service_fee' };
 
         // --- ESTADO DE LA APLICACIÓN ---
-        let cart = []; // Almacena los productos y servicios seleccionados
+        let cart = [];
 
         // --- ELEMENTOS DEL DOM ---
         const itemsContainer = document.getElementById('items-container');
@@ -117,6 +135,29 @@
         const customerAddressEl = document.getElementById('customer-address');
         const cartProductsSection = document.getElementById('cart-products-section');
         const cartAppointmentsSection = document.getElementById('cart-appointments-section');
+        const successModal = document.getElementById('success-modal');
+        const submitOrderBtn = document.getElementById('submit-order-btn');
+
+        // --- INICIALIZACIÓN DE FIREBASE ---
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                const auth = getAuth(app);
+                setLogLevel('debug');
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Error al inicializar Firebase:", error);
+                alert("No se pudo conectar con el servicio de pedidos. Por favor, intente más tarde.");
+                submitOrderBtn.disabled = true;
+                submitOrderBtn.textContent = "Servicio no disponible";
+            }
+        }
 
         // --- FUNCIONES DE RENDERIZADO ---
         function renderCatalog() {
@@ -138,7 +179,7 @@
                 itemsContainer.appendChild(grid);
             }
         }
-
+        
         function updateCart() {
             emptyCartMessage.style.display = cart.length === 0 ? 'block' : 'none';
             cartProductsSection.innerHTML = '';
@@ -147,16 +188,16 @@
             const products = cart.filter(item => item.type === 'product');
             const services = cart.filter(item => item.type === 'service');
             
-            // Renderizar productos
             if (products.length > 0) {
                 let productsHtml = '<h3 class="text-lg font-semibold text-gray-700 mb-2">Productos en tu pedido:</h3><div class="space-y-2">';
-                products.forEach((item, index) => {
+                products.forEach((item) => {
+                    const originalIndex = cart.findIndex(cartItem => cartItem.id === item.id);
                     productsHtml += `
                         <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg fade-in">
                             <span>${item.name}</span>
                             <div class="flex items-center gap-3">
                                 <span class="font-semibold">$${item.price.toFixed(2)}</span>
-                                <button onclick="removeItemFromCart(${index})" class="text-red-500 hover:text-red-700"><i class="ph-bold ph-x-circle text-xl"></i></button>
+                                <button onclick="window.removeItemFromCart(${originalIndex})" class="text-red-500 hover:text-red-700"><i class="ph-bold ph-x-circle text-xl"></i></button>
                             </div>
                         </div>`;
                 });
@@ -164,16 +205,15 @@
                 cartProductsSection.innerHTML = productsHtml;
             }
 
-            // Renderizar citas
             if (services.length > 0) {
                 let appointmentsHtml = '<h3 class="text-lg font-semibold text-gray-700 mt-4 mb-2">Agendar Cita(s):</h3><div class="space-y-4">';
-                services.forEach((item, index) => {
+                services.forEach((item) => {
                     const originalIndex = cart.findIndex(cartItem => cartItem.id === item.id);
                     appointmentsHtml += `
                         <div class="bg-gray-50 p-3 rounded-lg fade-in">
                             <div class="flex justify-between items-center mb-3">
                                 <span class="font-semibold">${item.name}</span>
-                                <button onclick="removeItemFromCart(${originalIndex})" class="text-red-500 hover:text-red-700"><i class="ph-bold ph-x-circle text-xl"></i></button>
+                                <button onclick="window.removeItemFromCart(${originalIndex})" class="text-red-500 hover:text-red-700"><i class="ph-bold ph-x-circle text-xl"></i></button>
                             </div>
                             <div class="grid grid-cols-2 gap-2 text-sm">
                                 <input type="date" id="date-${item.id}" class="w-full p-2 border border-gray-300 rounded-lg">
@@ -183,8 +223,8 @@
                                     <option>3:00 PM - 6:00 PM</option>
                                 </select>
                                 <div class="col-span-2 flex gap-4 mt-1">
-                                    <label><input type="radio" name="location-${item.id}" value="Local" checked onchange="updateDeliveryFee()"> En Local</label>
-                                    <label><input type="radio" name="location-${item.id}" value="Domicilio" onchange="updateDeliveryFee()"> A Domicilio</label>
+                                    <label><input type="radio" name="location-${item.id}" value="Local" checked onchange="window.updateDeliveryFee()"> En Local</label>
+                                    <label><input type="radio" name="location-${item.id}" value="Domicilio" onchange="window.updateDeliveryFee()"> A Domicilio</label>
                                 </div>
                             </div>
                         </div>`;
@@ -193,31 +233,28 @@
                 cartAppointmentsSection.innerHTML = appointmentsHtml;
             }
 
-            // Calcular total
             const total = cart.reduce((sum, item) => sum + item.price, 0);
             totalEl.textContent = `$${total.toFixed(2)}`;
         }
-        
+
         // --- LÓGICA DEL CARRITO Y PEDIDO ---
-        function addItemToCart(item) {
-            // Evitar duplicados
+        window.addItemToCart = (item) => {
             if (cart.some(cartItem => cartItem.id === item.id)) {
                 alert("Este artículo ya está en tu carrito.");
                 return;
             }
             cart.push(item);
             updateCart();
-            updateDeliveryFee();
+            window.updateDeliveryFee();
         }
 
-        function removeItemFromCart(index) {
+        window.removeItemFromCart = (index) => {
             cart.splice(index, 1);
             updateCart();
-            updateDeliveryFee();
+            window.updateDeliveryFee();
         }
 
-        function updateDeliveryFee() {
-            // Verificar si alguna cita es a domicilio
+        window.updateDeliveryFee = () => {
             const isHomeService = cart.some(item => {
                 if (item.type === 'service') {
                     const radio = document.querySelector(`input[name="location-${item.id}"]:checked`);
@@ -225,91 +262,120 @@
                 }
                 return false;
             });
-
             const hasDeliveryFee = cart.some(item => item.id === 'delivery');
 
             if (isHomeService && !hasDeliveryFee) {
                 cart.push(DELIVERY_ITEM);
             } else if (!isHomeService && hasDeliveryFee) {
                 const deliveryIndex = cart.findIndex(item => item.id === 'delivery');
-                if (deliveryIndex > -1) {
-                    cart.splice(deliveryIndex, 1);
-                }
+                if (deliveryIndex > -1) cart.splice(deliveryIndex, 1);
             }
             updateCart();
         }
 
-        function processOrder() {
-            // Validación de datos
+        window.processOrder = async () => {
+            if (!db) {
+                alert("El servicio de pedidos no está disponible. Intente más tarde.");
+                return;
+            }
+            
             const name = customerNameEl.value.trim();
             const phone = customerPhoneEl.value.trim();
             const address = customerAddressEl.value.trim();
 
             if (cart.length === 0) {
-                alert("Tu carrito está vacío. Agrega productos o servicios para continuar.");
-                return;
+                alert("Tu carrito está vacío."); return;
             }
             if (!name || !phone) {
-                alert("Por favor, ingresa tu nombre y teléfono de WhatsApp.");
-                return;
+                alert("Por favor, ingresa tu nombre y teléfono."); return;
             }
             const needsAddress = cart.some(item => {
                  if (item.type === 'service') {
                     const radio = document.querySelector(`input[name="location-${item.id}"]:checked`);
                     return radio && radio.value === 'Domicilio';
                 }
-                return item.type === 'product'; // Productos también necesitan dirección para envío
+                return item.type === 'product';
             });
-
             if (needsAddress && !address) {
-                alert("Por favor, ingresa tu dirección para el envío o la cita a domicilio.");
-                return;
+                alert("Por favor, ingresa tu dirección para el envío o la cita a domicilio."); return;
             }
 
-            // Construir mensaje de WhatsApp
-            let message = `🐾 *Nuevo Pedido de Veterinaria Zona Animal* 🐾\n\n`;
-            message += `*Datos del Cliente:*\n`;
-            message += `*Nombre:* ${name}\n`;
-            message += `*Teléfono:* ${phone}\n`;
-            if (address) message += `*Dirección:* ${address}\n\n`;
-            
-            const products = cart.filter(item => item.type === 'product');
+            // Recopilar datos de la cita
+            let appointmentInfo = null;
             const services = cart.filter(item => item.type === 'service');
-
-            if (products.length > 0) {
-                message += `*Productos Solicitados:*\n`;
-                products.forEach(p => {
-                    message += `▪️ ${p.name} - $${p.price.toFixed(2)}\n`;
-                });
-                message += `\n`;
-            }
-
             if (services.length > 0) {
-                message += `*Citas Agendadas:*\n`;
-                services.forEach(s => {
-                    const date = document.getElementById(`date-${s.id}`).value;
-                    const time = document.getElementById(`time-${s.id}`).value;
-                    const location = document.querySelector(`input[name="location-${s.id}"]:checked`).value;
-                    message += `▪️ *Servicio:* ${s.name}\n`;
-                    message += `   *Fecha:* ${date || 'Sin especificar'}\n`;
-                    message += `   *Horario:* ${time}\n`;
-                    message += `   *Lugar:* ${location}\n\n`;
-                });
+                const mainService = services[0]; // Simplificado para tomar datos de la primera cita
+                appointmentInfo = {
+                    date: document.getElementById(`date-${mainService.id}`).value || 'No especificada',
+                    time: document.getElementById(`time-${mainService.id}`).value,
+                    location: document.querySelector(`input[name="location-${mainService.id}"]:checked`).value
+                };
             }
 
-            message += `----------------------------------\n`;
-            message += `*TOTAL DEL PEDIDO: $${totalEl.textContent.replace('$', '')}*\n\n`;
-            message += `¡Gracias! Nos pondremos en contacto para confirmar.`;
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
 
+            // Crear el objeto del pedido
+            const orderData = {
+                customerInfo: { name, phone, address },
+                items: cart.map(({id, name, price, type}) => ({id, name, price, type})), // Guardar solo info necesaria
+                appointmentInfo,
+                total,
+                status: 'Pendiente',
+                timestamp: serverTimestamp()
+            };
+
+            // Guardar en Firestore
+            try {
+                submitOrderBtn.disabled = true;
+                submitOrderBtn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Procesando...`;
+                const ordersCollectionPath = `/artifacts/${appId}/public/data/orders`;
+                await addDoc(collection(db, ordersCollectionPath), orderData);
+                
+                // Mostrar modal de éxito y limpiar
+                successModal.classList.remove('hidden');
+                sendWhatsAppNotification(orderData); // Opcional: notificar también por WhatsApp
+                cart = [];
+                customerNameEl.value = '';
+                customerPhoneEl.value = '';
+                customerAddressEl.value = '';
+                updateCart();
+
+            } catch (error) {
+                console.error("Error al guardar el pedido:", error);
+                alert("Hubo un problema al enviar tu pedido. Por favor, inténtalo de nuevo.");
+            } finally {
+                submitOrderBtn.disabled = false;
+                submitOrderBtn.innerHTML = `<i class="ph-bold ph-whatsapp-logo"></i> Realizar Pedido por WhatsApp`;
+            }
+        }
+
+        function sendWhatsAppNotification(orderData) {
+            let message = `🐾 *Confirmación de Pedido - Zona Animal* 🐾\n\n`;
+            message += `¡Hola *${orderData.customerInfo.name}*! Hemos recibido tu pedido con los siguientes detalles:\n\n`;
+            orderData.items.forEach(item => {
+                message += `▪️ ${item.name} - $${item.price.toFixed(2)}\n`;
+            });
+            if (orderData.appointmentInfo) {
+                message += `\n*Cita Agendada:*\n`;
+                message += `   - Fecha: ${orderData.appointmentInfo.date}\n`;
+                message += `   - Lugar: ${orderData.appointmentInfo.location}\n`;
+            }
+            message += `\n*Total: $${orderData.total.toFixed(2)}*\n\n`;
+            message += `Nos pondremos en contacto contigo en breve para confirmar todo. ¡Gracias!`;
+            
             const encodedMessage = encodeURIComponent(message);
             const businessPhoneNumber = "522452070033";
             const whatsappUrl = `https://api.whatsapp.com/send?phone=${businessPhoneNumber}&text=${encodedMessage}`;
-            
             window.open(whatsappUrl, '_blank');
+        }
+        
+        window.closeSuccessModal = () => {
+            successModal.classList.add('hidden');
         }
 
         // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
             renderCatalog();
             updateCart();
         });
