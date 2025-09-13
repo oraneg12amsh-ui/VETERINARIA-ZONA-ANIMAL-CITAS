@@ -18,7 +18,8 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         /* Ocultar secciones por defecto */
-        main section:not(#dashboard) { display: none; }
+        main section { display: none; }
+        main section#dashboard { display: block; }
     </style>
 </head>
 <body class="antialiased text-gray-900">
@@ -32,7 +33,7 @@
             </a>
 
             <nav id="nav-menu">
-                <a href="#dashboard" class="nav-link w-full flex items-center text-gray-300 hover:bg-gray-700 hover:text-white py-2 px-4 rounded transition duration-200 bg-gray-700">
+                <a href="#dashboard" class="nav-link w-full flex items-center text-white bg-gray-700 py-2 px-4 rounded transition duration-200">
                     <i class="ph-bold ph-gauge mr-3"></i> Dashboard
                 </a>
                 <a href="#orders" class="nav-link w-full flex items-center text-gray-300 hover:bg-gray-700 hover:text-white py-2 px-4 rounded transition duration-200">
@@ -51,8 +52,7 @@
         <main class="flex-1 p-6 md:p-10">
             <header class="flex justify-between items-center mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold">Panel de Administración</h1>
-                    <p class="text-gray-500">Bienvenido, aquí puedes gestionar tu veterinaria.</p>
+                    <h1 id="main-title" class="text-3xl font-bold">Dashboard</h1>
                 </div>
                 <button id="menu-button" class="md:hidden p-2 rounded-md bg-gray-100 hover:bg-gray-200 z-20">
                     <i class="ph-bold ph-list text-2xl"></i>
@@ -95,18 +95,9 @@
 
             <!-- Sección: Pedidos -->
             <section id="orders">
-                <h2 class="text-2xl font-bold mb-4">Últimos Pedidos</h2>
                 <div class="bg-white p-6 rounded-2xl shadow-md overflow-x-auto">
                     <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b">
-                                <th class="py-3 px-4 font-semibold">Cliente</th>
-                                <th class="py-3 px-4 font-semibold">Total</th>
-                                <th class="py-3 px-4 font-semibold">Fecha</th>
-                                <th class="py-3 px-4 font-semibold">Estado</th>
-                                <th class="py-3 px-4 font-semibold">Acciones</th>
-                            </tr>
-                        </thead>
+                        <thead><tr class="border-b"><th class="py-3 px-4 font-semibold">Cliente</th><th class="py-3 px-4 font-semibold">Total</th><th class="py-3 px-4 font-semibold">Fecha</th><th class="py-3 px-4 font-semibold">Estado</th><th class="py-3 px-4 font-semibold">Acciones</th></tr></thead>
                         <tbody id="orders-table-body"></tbody>
                     </table>
                 </div>
@@ -114,23 +105,12 @@
             
             <!-- SECCIÓN: Productos -->
             <section id="products">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold">Gestionar Catálogo</h2>
-                    <button onclick="window.openProductModal()" class="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 flex items-center gap-2">
-                        <i class="ph-bold ph-plus"></i> Agregar Producto
-                    </button>
+                <div class="flex justify-end mb-4">
+                    <button onclick="window.openProductModal()" class="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 flex items-center gap-2"><i class="ph-bold ph-plus"></i> Agregar Producto</button>
                 </div>
                 <div class="bg-white p-6 rounded-2xl shadow-md overflow-x-auto">
                     <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b">
-                                <th class="py-3 px-4 font-semibold">Imagen</th>
-                                <th class="py-3 px-4 font-semibold">Nombre</th>
-                                <th class="py-3 px-4 font-semibold">Precio</th>
-                                <th class="py-3 px-4 font-semibold">Categoría</th>
-                                <th class="py-3 px-4 font-semibold">Acciones</th>
-                            </tr>
-                        </thead>
+                        <thead><tr class="border-b"><th class="py-3 px-4 font-semibold">Imagen</th><th class="py-3 px-4 font-semibold">Nombre</th><th class="py-3 px-4 font-semibold">Precio</th><th class="py-3 px-4 font-semibold">Categoría</th><th class="py-3 px-4 font-semibold">Acciones</th></tr></thead>
                         <tbody id="products-table-body"></tbody>
                     </table>
                 </div>
@@ -138,21 +118,13 @@
 
             <!-- SECCIÓN: Clientes -->
             <section id="customers">
-                <h2 class="text-2xl font-bold mb-4">Lista de Clientes</h2>
                 <div class="bg-white p-6 rounded-2xl shadow-md overflow-x-auto">
                     <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b">
-                                <th class="py-3 px-4 font-semibold">Nombre</th>
-                                <th class="py-3 px-4 font-semibold">Teléfono</th>
-                                <th class="py-3 px-4 font-semibold">Último Pedido</th>
-                            </tr>
-                        </thead>
+                        <thead><tr class="border-b"><th class="py-3 px-4 font-semibold">Nombre</th><th class="py-3 px-4 font-semibold">Teléfono</th><th class="py-3 px-4 font-semibold">Último Pedido</th></tr></thead>
                         <tbody id="customers-table-body"></tbody>
                     </table>
                 </div>
             </section>
-
         </main>
     </div>
 
@@ -164,7 +136,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyCC-swKUQGU93xe_bc7Qts2nhFCji3ZeDs",
@@ -182,6 +154,7 @@
         let allCustomers = [];
 
         // --- DOM ELEMENTS ---
+        const mainTitle = document.getElementById('main-title');
         const ordersTableBody = document.getElementById('orders-table-body');
         const productsTableBody = document.getElementById('products-table-body');
         const customersTableBody = document.getElementById('customers-table-body');
@@ -197,23 +170,19 @@
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
-                const auth = getAuth(app);
-                await signInAnonymously(auth);
+                await signInAnonymously(getAuth(app));
                 listenToOrders();
                 listenToProducts();
                 setupNavigation();
-                
-                await preloadInitialProducts(); // CORREGIDO: Llamada segura sin setTimeout
             } catch (error) {
                 console.error("Error al inicializar Firebase:", error);
                 alert("Error de configuración de Firebase. Revisa la consola.");
             }
         }
         
-        // --- LISTENERS DE FIRESTORE ---
+        // --- LISTENERS ---
         function listenToOrders() {
-            const ordersRef = collection(db, `/artifacts/${appId}/public/data/orders`);
-            onSnapshot(ordersRef, (snapshot) => {
+            onSnapshot(collection(db, `/artifacts/${appId}/public/data/orders`), (snapshot) => {
                 allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allOrders.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
                 processCustomers();
@@ -223,8 +192,7 @@
         }
         
         function listenToProducts() {
-            const productsRef = collection(db, `/artifacts/${appId}/public/data/products`);
-            onSnapshot(productsRef, (snapshot) => {
+            onSnapshot(collection(db, `/artifacts/${appId}/public/data/products`), (snapshot) => {
                 allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allProducts.sort((a, b) => a.name.localeCompare(b.name));
                 renderProductsTable();
@@ -234,20 +202,19 @@
         function processCustomers() {
             const customersMap = new Map();
             allOrders.forEach(order => {
-                if (order.customerInfo && order.customerInfo.phone) {
+                if (order.customerInfo?.phone) {
                     const phone = order.customerInfo.phone;
                     const orderDate = order.timestamp?.toDate() || new Date(0);
                     if (!customersMap.has(phone) || orderDate > customersMap.get(phone).lastOrderDate) {
                         customersMap.set(phone, {
                             name: order.customerInfo.name,
-                            phone: phone,
+                            phone,
                             lastOrderDate: orderDate
                         });
                     }
                 }
             });
-            allCustomers = Array.from(customersMap.values());
-            allCustomers.sort((a, b) => b.lastOrderDate - a.lastOrderDate);
+            allCustomers = Array.from(customersMap.values()).sort((a, b) => b.lastOrderDate - a.lastOrderDate);
             renderCustomersTable();
         }
 
@@ -266,87 +233,53 @@
         }
 
         function renderOrdersTable() {
-            if (!ordersTableBody) return;
-            ordersTableBody.innerHTML = allOrders.length === 0 ? `<tr><td colspan="5" class="text-center p-8 text-gray-500">Aún no hay pedidos.</td></tr>` : '';
+            ordersTableBody.innerHTML = allOrders.length > 0 ? '' : `<tr><td colspan="5" class="text-center p-8 text-gray-500">Aún no hay pedidos.</td></tr>`;
             allOrders.forEach(order => {
-                const row = document.createElement('tr');
+                const row = ordersTableBody.insertRow();
                 row.className = 'border-b hover:bg-gray-50';
                 const statusMap = { 'Pendiente': 'bg-yellow-100 text-yellow-800', 'Confirmado': 'bg-blue-100 text-blue-800', 'Completado': 'bg-green-100 text-green-800' };
-                const date = order.timestamp ? order.timestamp.toDate().toLocaleDateString() : 'N/A';
-                row.innerHTML = `<td class="py-3 px-4">${order.customerInfo?.name || 'N/A'}</td><td class="py-3 px-4 font-medium">$${(order.total || 0).toFixed(2)}</td><td class="py-3 px-4 text-gray-600">${date}</td><td class="py-3 px-4"><span class="font-medium py-1 px-3 rounded-full text-xs ${statusMap[order.status] || ''}">${order.status}</span></td><td class="py-3 px-4"><button onclick="window.showOrderDetails('${order.id}')" class="text-cyan-600 hover:underline font-semibold">Ver Detalles</button></td>`;
-                ordersTableBody.appendChild(row);
+                row.innerHTML = `<td class="py-3 px-4">${order.customerInfo?.name || 'N/A'}</td><td class="py-3 px-4 font-medium">$${(order.total || 0).toFixed(2)}</td><td class="py-3 px-4 text-gray-600">${order.timestamp?.toDate().toLocaleDateString() || 'N/A'}</td><td class="py-3 px-4"><span class="font-medium py-1 px-3 rounded-full text-xs ${statusMap[order.status] || ''}">${order.status}</span></td><td class="py-3 px-4"><button onclick="window.showOrderDetails('${order.id}')" class="text-cyan-600 hover:underline font-semibold">Ver Detalles</button></td>`;
             });
         }
         
         function renderProductsTable() {
-            if (!productsTableBody) return;
-            productsTableBody.innerHTML = allProducts.length === 0 ? `<tr><td colspan="5" class="text-center p-8 text-gray-500">No hay productos en el catálogo.</td></tr>` : '';
+            productsTableBody.innerHTML = allProducts.length > 0 ? '' : `<tr><td colspan="5" class="text-center p-8 text-gray-500">No hay productos.</td></tr>`;
             allProducts.forEach(product => {
-                const row = document.createElement('tr');
+                const row = productsTableBody.insertRow();
                 row.className = 'border-b hover:bg-gray-50';
-                row.innerHTML = `
-                    <td class="py-2 px-4"><img src="${product.imageUrl || 'https://placehold.co/64x64/eee/ccc?text=N/A'}" alt="${product.name}" class="w-12 h-12 object-cover rounded-md"></td>
-                    <td class="py-3 px-4">${product.name}</td>
-                    <td class="py-3 px-4 font-medium">$${(product.price || 0).toFixed(2)}</td>
-                    <td class="py-3 px-4 text-gray-600">${product.category}</td>
-                    <td class="py-3 px-4">
-                        <button onclick="window.openProductModal('${product.id}')" class="text-cyan-600 hover:underline font-semibold mr-4">Editar</button>
-                        <button onclick="window.deleteProduct('${product.id}')" class="text-red-600 hover:underline font-semibold">Borrar</button>
-                    </td>`;
-                productsTableBody.appendChild(row);
+                row.innerHTML = `<td class="py-2 px-4"><img src="${product.imageUrl || 'https://placehold.co/64x64/eee/ccc?text=N/A'}" alt="${product.name}" class="w-12 h-12 object-cover rounded-md"></td><td class="py-3 px-4">${product.name}</td><td class="py-3 px-4 font-medium">$${(product.price || 0).toFixed(2)}</td><td class="py-3 px-4 text-gray-600">${product.category}</td><td class="py-3 px-4"><button onclick="window.openProductModal('${product.id}')" class="text-cyan-600 hover:underline font-semibold mr-4">Editar</button><button onclick="window.deleteProduct('${product.id}')" class="text-red-600 hover:underline font-semibold">Borrar</button></td>`;
             });
         }
 
         function renderCustomersTable() {
-            if (!customersTableBody) return;
-            customersTableBody.innerHTML = allCustomers.length === 0 ? `<tr><td colspan="3" class="text-center p-8 text-gray-500">No hay clientes registrados.</td></tr>` : '';
+            customersTableBody.innerHTML = allCustomers.length > 0 ? '' : `<tr><td colspan="3" class="text-center p-8 text-gray-500">No hay clientes.</td></tr>`;
             allCustomers.forEach(customer => {
-                const row = document.createElement('tr');
+                const row = customersTableBody.insertRow();
                 row.className = 'border-b hover:bg-gray-50';
-                const date = customer.lastOrderDate.toLocaleDateString();
-                row.innerHTML = `
-                    <td class="py-3 px-4">${customer.name}</td>
-                    <td class="py-3 px-4 text-gray-600">${customer.phone}</td>
-                    <td class="py-3 px-4 text-gray-600">${date}</td>
-                `;
-                customersTableBody.appendChild(row);
+                row.innerHTML = `<td class="py-3 px-4">${customer.name}</td><td class="py-3 px-4 text-gray-600">${customer.phone}</td><td class="py-3 px-4 text-gray-600">${customer.lastOrderDate.toLocaleDateString()}</td>`;
             });
         }
         
-        // --- MANEJO DE MODALES ---
+        // --- MODALS ---
         window.showOrderDetails = (orderId) => {
             const order = allOrders.find(o => o.id === orderId);
             if (!order) return;
-            let itemsHtml = order.items.map(item => `<li class="flex justify-between py-1"><span class="text-gray-600">${item.name} (x${item.quantity || 1})</span><span class="font-medium">$${(item.price * (item.quantity || 1)).toFixed(2)}</span></li>`).join('');
-            let appointmentHtml = order.appointmentInfo ? `<h4 class="text-md font-semibold text-gray-800 mt-4 mb-2">Detalles de la Cita</h4><ul class="text-sm space-y-1"><li class="flex justify-between"><span class="text-gray-600">Fecha:</span><span>${order.appointmentInfo.date}</span></li><li class="flex justify-between"><span class="text-gray-600">Hora:</span><span>${order.appointmentInfo.time}</span></li><li class="flex justify-between"><span class="text-gray-600">Lugar:</span><span>${order.appointmentInfo.location}</span></li></ul>` : '';
-            const modalContent = `<div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full m-4 modal-content"><header class="p-6 border-b flex justify-between items-center"><h3 class="text-xl font-bold">Pedido #${order.id.substring(0, 6)}</h3><button type="button" onclick="window.closeModal('order-details-modal')" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button></header><div class="p-6 max-h-[60vh] overflow-y-auto"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><h4 class="text-md font-semibold text-gray-800 mb-2">Info Cliente</h4><p class="text-gray-600">${order.customerInfo.name}</p><p class="text-gray-600">${order.customerInfo.phone}</p><p class="text-gray-600">${order.customerInfo.address || 'N/A'}</p></div><div><h4 class="text-md font-semibold text-gray-800 mb-2">Resumen</h4><ul class="divide-y">${itemsHtml}</ul><div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total:</span><span>$${order.total.toFixed(2)}</span></div></div></div>${appointmentHtml}</div><footer class="p-6 bg-gray-50 rounded-b-2xl flex flex-col sm:flex-row items-center justify-between gap-3"><div><label for="status-select" class="text-sm font-medium mr-2">Estado:</label><select id="status-select" class="p-2 border border-gray-300 rounded-lg"><option value="Pendiente" ${order.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="Confirmado" ${order.status === 'Confirmado' ? 'selected' : ''}>Confirmado</option><option value="Completado" ${order.status === 'Completado' ? 'selected' : ''}>Completado</option></select></div><div class="flex gap-3"><button type="button" onclick="window.closeModal('order-details-modal')" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg">Cerrar</button><button type="button" onclick="window.updateOrderStatus('${order.id}')" class="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Guardar</button></div></footer></div>`;
-            orderDetailsModal.innerHTML = modalContent;
+            const itemsHtml = order.items.map(item => `<li class="flex justify-between py-1"><span class="text-gray-600">${item.name} (x${item.quantity || 1})</span><span class="font-medium">$${(item.price * (item.quantity || 1)).toFixed(2)}</span></li>`).join('');
+            const appointmentHtml = order.appointmentInfo ? `<h4 class="text-md font-semibold text-gray-800 mt-4 mb-2">Cita</h4><ul class="text-sm space-y-1"><li class="flex justify-between"><span class="text-gray-600">Fecha:</span><span>${order.appointmentInfo.date}</span></li><li class="flex justify-between"><span class="text-gray-600">Hora:</span><span>${order.appointmentInfo.time}</span></li><li class="flex justify-between"><span class="text-gray-600">Lugar:</span><span>${order.appointmentInfo.location}</span></li></ul>` : '';
+            orderDetailsModal.innerHTML = `<div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full m-4 modal-content"><header class="p-6 border-b flex justify-between items-center"><h3 class="text-xl font-bold">Pedido #${order.id.substring(0, 6)}</h3><button type="button" onclick="window.closeModal('order-details-modal')" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button></header><div class="p-6 max-h-[60vh] overflow-y-auto"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><h4 class="text-md font-semibold text-gray-800 mb-2">Cliente</h4><p class="text-gray-600">${order.customerInfo.name}</p><p class="text-gray-600">${order.customerInfo.phone}</p><p class="text-gray-600">${order.customerInfo.address || 'N/A'}</p></div><div><h4 class="text-md font-semibold text-gray-800 mb-2">Resumen</h4><ul class="divide-y">${itemsHtml}</ul><div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total:</span><span>$${order.total.toFixed(2)}</span></div></div></div>${appointmentHtml}</div><footer class="p-6 bg-gray-50 rounded-b-2xl flex items-center justify-between gap-3"><div><label for="status-select" class="text-sm font-medium mr-2">Estado:</label><select id="status-select" class="p-2 border border-gray-300 rounded-lg"><option value="Pendiente" ${order.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option><option value="Confirmado" ${order.status === 'Confirmado' ? 'selected' : ''}>Confirmado</option><option value="Completado" ${order.status === 'Completado' ? 'selected' : ''}>Completado</option></select></div><button type="button" onclick="window.updateOrderStatus('${order.id}')" class="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Guardar</button></footer></div>`;
             orderDetailsModal.classList.remove('hidden');
         }
 
         window.openProductModal = (productId = null) => {
-            const isEditing = productId !== null;
+            const isEditing = !!productId;
             const product = isEditing ? allProducts.find(p => p.id === productId) : {};
-            const modalContent = `
-                <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full m-4 modal-content">
-                    <form id="product-form" onsubmit="window.saveProduct(event, '${productId}')">
-                        <header class="p-6 border-b flex justify-between items-center"><h3 class="text-xl font-bold">${isEditing ? 'Editar' : 'Agregar'} Producto</h3><button type="button" onclick="window.closeModal('product-modal')" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button></header>
-                        <div class="p-6 space-y-4">
-                            <div><label for="product-name" class="block text-sm font-medium text-gray-700">Nombre</label><input type="text" id="product-name" value="${product.name || ''}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div>
-                            <div><label for="product-price" class="block text-sm font-medium text-gray-700">Precio</label><input type="number" id="product-price" step="0.01" value="${product.price || ''}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div>
-                            <div><label for="product-image-url" class="block text-sm font-medium text-gray-700">URL de la Imagen</label><input type="url" id="product-image-url" value="${product.imageUrl || ''}" placeholder="https://ejemplo.com/imagen.jpg" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div>
-                            <div><label for="product-category" class="block text-sm font-medium text-gray-700">Categoría</label><select id="product-category" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white"><option ${product.category === 'Medicamentos' ? 'selected' : ''}>Medicamentos</option><option ${product.category === 'Alimentos y Accesorios' ? 'selected' : ''}>Alimentos y Accesorios</option><option ${product.category === 'Agenda de Citas' ? 'selected' : ''}>Agenda de Citas</option></select></div>
-                            <div><label for="product-type" class="block text-sm font-medium text-gray-700">Tipo</label><select id="product-type" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white"><option value="product" ${product.type === 'product' ? 'selected' : ''}>Producto (se vende)</option><option value="service" ${product.type === 'service' ? 'selected' : ''}>Servicio (se agenda)</option></select></div>
-                        </div>
-                        <footer class="p-6 bg-gray-50 rounded-b-2xl flex justify-end gap-3"><button type="button" onclick="window.closeModal('product-modal')" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancelar</button><button type="submit" class="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">${isEditing ? 'Guardar Cambios' : 'Guardar Producto'}</button></footer>
-                    </form>
-                </div>`;
-            productModal.innerHTML = modalContent;
+            productModal.innerHTML = `<div class="bg-white rounded-2xl shadow-xl max-w-lg w-full m-4 modal-content"><form id="product-form" onsubmit="window.saveProduct(event, ${productId ? `'${productId}'` : null})"><header class="p-6 border-b flex justify-between items-center"><h3 class="text-xl font-bold">${isEditing ? 'Editar' : 'Agregar'} Producto</h3><button type="button" onclick="window.closeModal('product-modal')" class="text-gray-400 hover:text-gray-700 text-2xl">&times;</button></header><div class="p-6 space-y-4"><div><label class="block text-sm font-medium text-gray-700">Nombre</label><input type="text" id="product-name" value="${product.name || ''}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label class="block text-sm font-medium text-gray-700">Precio</label><input type="number" id="product-price" step="0.01" value="${product.price || ''}" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label class="block text-sm font-medium text-gray-700">URL de Imagen</label><input type="url" id="product-image-url" value="${product.imageUrl || ''}" placeholder="https://ejemplo.com/imagen.jpg" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label class="block text-sm font-medium text-gray-700">Categoría</label><select id="product-category" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white"><option ${product.category === 'Medicamentos' ? 'selected' : ''}>Medicamentos</option><option ${product.category === 'Alimentos y Accesorios' ? 'selected' : ''}>Alimentos y Accesorios</option><option ${product.category === 'Agenda de Citas' ? 'selected' : ''}>Agenda de Citas</option></select></div><div><label class="block text-sm font-medium text-gray-700">Tipo</label><select id="product-type" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white"><option value="product" ${product.type === 'product' ? 'selected' : ''}>Producto</option><option value="service" ${product.type === 'service' ? 'selected' : ''}>Servicio</option></select></div></div><footer class="p-6 bg-gray-50 rounded-b-2xl flex justify-end gap-3"><button type="button" onclick="window.closeModal('product-modal')" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancelar</button><button type="submit" class="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg">Guardar</button></footer></form></div>`;
             productModal.classList.remove('hidden');
         }
 
         window.closeModal = (modalId) => document.getElementById(modalId).classList.add('hidden');
 
+        // --- ACCIONES ---
         window.updateOrderStatus = async (orderId) => {
             const newStatus = document.getElementById('status-select').value;
             await updateDoc(doc(db, `/artifacts/${appId}/public/data/orders`, orderId), { status: newStatus });
@@ -355,7 +288,6 @@
 
         window.saveProduct = async (event, productId) => {
             event.preventDefault();
-            const isEditing = productId && productId !== 'null';
             const productData = {
                 name: document.getElementById('product-name').value,
                 price: parseFloat(document.getElementById('product-price').value),
@@ -363,69 +295,43 @@
                 type: document.getElementById('product-type').value,
                 imageUrl: document.getElementById('product-image-url').value
             };
+            if (!productData.name || isNaN(productData.price)) return alert("Nombre y precio son requeridos.");
+            
             try {
-                if (isEditing) {
+                if (productId) {
                     await updateDoc(doc(db, `/artifacts/${appId}/public/data/products`, productId), productData);
                 } else {
                     await addDoc(collection(db, `/artifacts/${appId}/public/data/products`), productData);
                 }
                 window.closeModal('product-modal');
-            } catch (error) {
-                console.error("Error al guardar producto:", error);
-                alert("No se pudo guardar el producto.");
-            }
+            } catch (error) { console.error("Error al guardar producto:", error); }
         }
 
         window.deleteProduct = async (productId) => {
-            if (!confirm("¿Estás seguro de que quieres borrar este producto?")) return;
-            try {
-                await deleteDoc(doc(db, `/artifacts/${appId}/public/data/products`, productId));
-            } catch (error) {
-                console.error("Error al borrar el producto:", error);
-                alert("No se pudo borrar el producto.");
-            }
+            if (!confirm("¿Borrar este producto?")) return;
+            await deleteDoc(doc(db, `/artifacts/${appId}/public/data/products`, productId));
         }
         
-        // --- NAVEGACIÓN Y PRECARGA ---
+        // --- NAVEGACIÓN ---
         function setupNavigation() {
             const navLinks = document.querySelectorAll('.nav-link');
-            const sections = document.querySelectorAll('main section');
             navLinks.forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
                     const targetId = link.getAttribute('href').substring(1);
-                    sections.forEach(section => section.style.display = section.id === targetId ? 'block' : 'none');
-                    navLinks.forEach(nav => nav.classList.remove('bg-gray-700'));
-                    link.classList.add('bg-gray-700');
+                    document.querySelectorAll('main section').forEach(s => s.style.display = 'none');
+                    document.getElementById(targetId).style.display = 'block';
+                    navLinks.forEach(l => l.classList.remove('bg-gray-700', 'text-white'));
+                    link.classList.add('bg-gray-700', 'text-white');
+                    mainTitle.textContent = link.textContent.trim();
                     if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('sidebar-closed');
                 });
             });
+            document.getElementById('menu-button').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('sidebar-closed');
+            });
         }
         
-        async function preloadInitialProducts() {
-            const productsRef = collection(db, `/artifacts/${appId}/public/data/products`);
-            const snapshot = await getDocs(productsRef);
-            if (!snapshot.empty) {
-                console.log("El catálogo ya tiene productos. No se precargará.");
-                return;
-            }
-            
-            console.log("Catálogo vacío. Precargando productos iniciales...");
-            const initialProducts = [
-                { id: 'med1', name: 'Pipetas Anti Pulgas', price: 280.00, type: 'product', category: 'Medicamentos', imageUrl: 'https://placehold.co/150x150/dbeafe/4c51bf?text=Pipeta' },
-                { id: 'alim2', name: 'Beriscan por Kilo', price: 27.00, type: 'product', category: 'Alimentos y Accesorios', imageUrl: 'https://placehold.co/150x150/dbeafe/4c51bf?text=Croquetas' },
-                { id: 'cita1', name: 'Consulta General', price: 400.00, type: 'service', category: 'Agenda de Citas', imageUrl: 'https://placehold.co/150x150/dbeafe/4c51bf?text=Consulta' }
-            ];
-            for (const product of initialProducts) {
-                try { await setDoc(doc(db, `/artifacts/${appId}/public/data/products`, product.id), product); }
-                catch (error) { console.error("Error al precargar producto:", product.name, error); }
-            }
-        }
-
-        document.getElementById('menu-button').addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('sidebar-closed');
-        });
-
         initFirebase();
     </script>
 </body>
