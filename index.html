@@ -969,15 +969,45 @@
                     ${order.status === 'en-camino' ? `
                     <div class="mt-4 flex flex-col sm:flex-row gap-2">
                         <input type="text" id="update-${order.id}" class="w-full p-2 border rounded" placeholder="Ej: El repartidor está en la calle principal">
-                        <div class="flex gap-2">
-                             <button onclick="sendDeliveryUpdate('${order.id}')" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm w-full">Enviar Nota</button>
-                             <button onclick="sendCurrentLocation('${order.id}')" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm w-full">📍 Enviar Ubicación</button>
+                        <div class="flex gap-2 flex-wrap">
+                             <button onclick="sendDeliveryUpdate('${order.id}')" class="flex-grow bg-blue-500 text-white px-3 py-2 rounded-lg text-sm">Enviar Nota</button>
+                             <button onclick="sendCurrentLocation('${order.id}')" class="flex-grow bg-gray-500 text-white px-3 py-2 rounded-lg text-sm" title="Enviar un punto fijo en el mapa">📍 Ubicación</button>
+                             <button onclick="sendLiveLocation('${order.id}')" class="flex-grow bg-green-600 text-white px-3 py-2 rounded-lg text-sm" title="Simular un enlace de seguimiento por 15 minutos">📡 En vivo</button>
                         </div>
                     </div>
                     ` : ''}
                 </div>`).join('') || '<p class="text-center text-gray-500">No hay pedidos para mostrar.</p>'}
             </div>
         </div>`;
+    }
+
+    function sendLiveLocation(orderId) {
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        if (!navigator.geolocation) {
+            showNotification('Geolocalización no es soportada por tu navegador.', 'error');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                
+                let locationMessage = `¡Tu pedido #${order.id} de Zona Animal está en camino! 🚚\n\n`;
+                locationMessage += `El repartidor ha compartido su ubicación en tiempo real. Este enlace será válido por los próximos 15 minutos.\n\n`;
+                locationMessage += `Sigue el progreso aquí:\n${mapsLink}`;
+
+                const customerPhone = order.phone.replace(/\D/g, '');
+                const whatsappUrl = `https://wa.me/521${customerPhone}?text=${encodeURIComponent(locationMessage)}`;
+                window.open(whatsappUrl, '_blank');
+                showNotification('Enlace de ubicación en vivo enviado.', 'success');
+            },
+            () => {
+                showNotification('No se pudo obtener la ubicación. Asegúrate de tener el GPS activado y dar los permisos necesarios.', 'error');
+            }
+        );
     }
 
     function sendCurrentLocation(orderId) {
@@ -994,7 +1024,7 @@
                 const { latitude, longitude } = position.coords;
                 const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
                 
-                let locationMessage = `¡Hola! El repartidor de tu pedido #${order.id} de Zona Animal está aquí:\n\n${mapsLink}\n\nPuedes seguir su ubicación en tiempo real.`;
+                let locationMessage = `¡Hola! El repartidor de tu pedido #${order.id} de Zona Animal está en esta ubicación:\n\n${mapsLink}`;
 
                 const customerPhone = order.phone.replace(/\D/g, '');
                 const whatsappUrl = `https://wa.me/521${customerPhone}?text=${encodeURIComponent(locationMessage)}`;
