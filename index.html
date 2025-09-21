@@ -23,7 +23,7 @@
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                        <span class="text-2xl">🐾</span>
+                        <span class="text-2xl text-blue-600">🐾</span>
                     </div>
                     <h1 class="text-2xl font-bold">Zona Animal</h1>
                 </div>
@@ -238,8 +238,37 @@
 
     <!-- Footer -->
     <footer id="contacto" class="bg-gray-800 text-white py-12">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2024 Zona Animal. Todos los derechos reservados.</p>
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+                <div>
+                    <div class="flex items-center justify-center md:justify-start space-x-3 mb-4">
+                         <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <span class="text-2xl text-white">🐾</span>
+                        </div>
+                        <h3 class="text-xl font-bold">Zona Animal</h3>
+                    </div>
+                    <p class="text-gray-300">Cuidando a tus mascotas con amor y profesionalismo.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Contacto</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p>📍 280 Calle 7 Ote<br>Cdad. Serdán, Puebla</p>
+                        <p>📞 2491571588</p>
+                        <p>✉️ info@zonaanimal.com</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Horarios</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <p>Lun - Vie: 9:00 AM - 6:00 PM</p>
+                        <p>Sábados: 9:00 AM - 2:00 PM</p>
+                        <p>Emergencias 24/7</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 Zona Animal. Todos los derechos reservados.</p>
+            </div>
         </div>
     </footer>
 
@@ -959,12 +988,15 @@
                             <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
                             ${order.lastUpdate ? `<p class="text-sm text-blue-600"><strong>Última act:</strong> ${order.lastUpdate}</p>` : ''}
                         </div>
-                        <select onchange="updateOrderStatus('${order.id}', this.value)" class="p-1 border rounded">
-                            <option value="confirmado" ${order.status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
-                            <option value="preparando" ${order.status === 'preparando' ? 'selected' : ''}>Preparando</option>
-                            <option value="en-camino" ${order.status === 'en-camino' ? 'selected' : ''}>En Camino</option>
-                            <option value="entregado" ${order.status === 'entregado' ? 'selected' : ''}>Entregado</option>
-                        </select>
+                        <div class="flex items-center gap-2">
+                            <select onchange="updateOrderStatus('${order.id}', this.value)" class="p-1 border rounded text-sm">
+                                <option value="confirmado" ${order.status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
+                                <option value="preparando" ${order.status === 'preparando' ? 'selected' : ''}>Preparando</option>
+                                <option value="en-camino" ${order.status === 'en-camino' ? 'selected' : ''}>En Camino</option>
+                                <option value="entregado" ${order.status === 'entregado' ? 'selected' : ''}>Entregado</option>
+                            </select>
+                            <button onclick="deleteOrder('${order.id}')" class="text-red-500 font-bold text-xl">&times;</button>
+                        </div>
                     </div>
                     ${order.status === 'en-camino' ? `
                     <div class="mt-4 flex flex-col sm:flex-row gap-2">
@@ -979,6 +1011,17 @@
                 </div>`).join('') || '<p class="text-center text-gray-500">No hay pedidos para mostrar.</p>'}
             </div>
         </div>`;
+    }
+
+    function deleteOrder(orderId) {
+        showConfirm('Eliminar Pedido', `¿Estás seguro de que quieres eliminar el pedido #${orderId}? Esta acción no se puede deshacer.`, confirmed => {
+            if (confirmed) {
+                orders = orders.filter(o => o.id !== orderId);
+                saveData();
+                renderAdminOrders();
+                showNotification(`Pedido #${orderId} eliminado.`, 'info');
+            }
+        });
     }
 
     function sendLiveLocation(orderId) {
