@@ -186,7 +186,7 @@
                  <div class="text-center mb-6">
                     <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-2xl text-white">🔐</span></div>
                     <h3 class="text-xl font-bold text-gray-800">Acceso Administrativo</h3>
-                    <p class="text-gray-600 text-sm mt-2">Usuario: admin / Contraseña: password123</p>
+                    <p class="text-gray-600 text-sm mt-2">Usuario: admin / Contraseña por defecto: password123</p>
                 </div>
                 <form id="admin-login-form" class="space-y-4">
                     <div>
@@ -215,10 +215,12 @@
                     <button onclick="showAdminTab('productos', this)" class="admin-tab bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">Gestionar Productos</button>
                     <button onclick="showAdminTab('envios', this)" class="admin-tab bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300">Gestionar Envíos</button>
                     <button onclick="showAdminTab('citas', this)" class="admin-tab bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300">Gestionar Citas</button>
+                    <button onclick="showAdminTab('seguridad', this)" class="admin-tab bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300">Seguridad</button>
                 </div>
                 <div id="admin-productos" class="admin-content"></div>
                 <div id="admin-envios" class="admin-content hidden"></div>
                 <div id="admin-citas" class="admin-content hidden"></div>
+                <div id="admin-seguridad" class="admin-content hidden"></div>
                 
                 <!-- Data Management Section -->
                 <div id="data-management" class="mt-12 bg-white p-6 rounded-xl shadow-lg border">
@@ -256,6 +258,7 @@
     let currentFilter = 'todos';
     let isAdminLoggedIn = false;
     let confirmCallback = null;
+    let adminPassword = 'password123';
 
     // --- DATA PERSISTENCE (localStorage) ---
     function saveData() {
@@ -264,6 +267,7 @@
             localStorage.setItem('zonaAnimalCart', JSON.stringify(cart));
             localStorage.setItem('zonaAnimalOrders', JSON.stringify(orders));
             localStorage.setItem('zonaAnimalAppointments', JSON.stringify(appointments));
+            localStorage.setItem('zonaAnimalPassword', adminPassword);
         } catch (error) {
             console.error('Error al guardar datos:', error);
         }
@@ -349,7 +353,7 @@
                 "name": "COLLARES DE RECUPERACION (TALLA M NEGRO TRANSPARENTE)",
                 "price": 190,
                 "category": "accesorios",
-                "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxIQEhUTEhIVFhUWFRYVFRYVFRYWFhgYFhgXFhUdFRUYHSggGh0lHhcVIzEhJSorLi8uGB8zODMuNykuLisBCgoKDg0OGxAQGi0lGyIrLS0vLS0tLTctLy8rLS0tLS0tLS01LS0tKy0vLS4tLS0tLS0tLSstKy0rLTctLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAcAAEAAgMBAQEAAAAAAAAAAAAABQYDBAcCAQj/xABLEAABAwIDBAYGBQkFBwUAAAABAAIDBBEFEiEGEzFBByJRYXGBFBUykaGxQmJygsEjM0NSkqKy0fAkVJPT4RYXNFOzwsMlRGODo//EABkBAQADAQEAAAAAAAAAAAAAAAACAwQBBf/EACYRAQACAgEDBAEFAAAAAAAAAAABAgMRBBIhMRMyUXFBFCKBkcH/2gAMAwEAAhEDEQH/AO4oiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICLHJUMb7TmjxIHzXpjwRcEEd2qD0iIgIiICIiAiIgIiICIiAvhNkc4AXOgHErgNdU1+01VNHDUsipI3WDC8gGPMQxzom9aRzrX63VF7XHMOt4tt5hlLcS1sIcOLWu3jv2Y7lV2p6acKb7Jnf8AZhI/jLVC4X0L0UYG/lmmPMAiJl+5rQXfvKwUvRthUfCjY7ve6R/8Tigjf9+mHf3es/Yg/wA5bUPTXhbva9IZ9qK/8DipT/YnDf7jTf4TP5LDNsBhb+NDD91pb/CQg3MP6TMJn0bWxtPZKHRf9QAK001SyVodG9r2ng5rg5p8CNFzSv6JMMkByRyxHtjlcfhJmCq9Z0bV+GF1RhlY45esWfm3kDXXjHLz0cB5oO8Iqx0c7UetKJk7sokBMcobwD221A5BzS11uWZWdAREQFhrKuOFjpJXtYxgu57iGtaO0k8FjxXEYqWF88zgyONpc9x5AdgGpJ4ADUkgLlFLS1G0kvpFVnhw5jjuKcEtdMQbZpCPmOHBvNxCTrOkaqrnuhwWl3oacrqqYFsLT9UG1/Mg/VIWt/sJiFX1sRxec34xU35OMX5X0B82K83gpImtAZFGwZWtaA1o7mtCj37SR2JaxxH6zrNB8Bqfgq75aU90rKYr39sK1F0PYWB1mTPPMumNz+yAF8d0SULDmp5aqnd+tFNb33aT8VPSbSOb7UQHYC83/hSPa2LNZ7HN7wQ4efA/NV/q8Pjaf6bLrekB6vx7DutTVjK+MfoaluWW3Y2Qm5NuZcPBWHY/pFp66Q08rHUtW3R1PLoSbX/JuIGbTWxAPO1tVMwVDZG5mODmngQoHbDZKDEo7PuyZusU7NJGEajXm2/0fMWOq0RO/CiY0vKKg9Hm1E5kfhuIf8ZC27JPo1EXJ7TzPb2+Ida/ICIiAiIgIiICIiDXr3AMdcA3BFjzvouB490b1lFL6RhjnuaDdrY3ZZ4x2Ak/lG8u08CDqV3HEJMzrch81jY1BxfCulyspnbqupxIRxJBgm8XMIyk+TVbaLpcw1465mhPY+Iu9xizK8V+FwVDcs8McreyRjXjyzBfnHpMw+CHE5YKSIMa3dMyNvYyPa1xsCdPbAsLDRB2P/ejhP8Aej/gVP8Alry7pTwkf+4d/gT/AIsXIj0cVvohnyu3wJPomQ78sDsuYAG5HO1ltVHRfVNdAA8PY82ne0N/s2jS7egv5Au5/R7wg6NWdL+GMYXMM0juAY2ItPiXPsAPO/cqHjW2uJY440tJCWRu0dHGbktP/PmNg1vdoDwN1E4hsw2grqYSNM1I+WECUlpjma7JvMuTgBmdpfW/O1+iaLDoqdgjhjZGw+ixoaPeCCG6L9m9WU+5c4OkkdvJXD2c5AFmX1ygNAueJudL2F2UKTY3HJS8T8wB7UHtEWCuqRFG+R3BjHPPg0En5IOY7aPdjGJMw1pIpaa01YWkjM7i1lx4geJeeLAr9DE1jWsY0Na0BrWtFgABYAAcAAqV0R0jvRH1cn52smkneTxtmc1o8Lh7h9pWnGsRFNC+U/RGg7XHRo96jNoiNy7ETM6hzLavaVr6x7XucWxOMcbWgkFzdXE24AWNz/JWLZWmdWStLvzbGhzrcL8QPkud02CvrHbtpOd0zr6A5swBJPxN/FdvwHCG0NNu2autqe027V5tMUZL9f8y9LJknHTo/r/AFR9qK9rZXm+gfl/r+Sh6iQlocBcH4eSgdsaecykakB1y3tN76g8R2jvWng7JYrutkZwyGwzEkm4aBZvHkFnthi1Zvvvvw0VyTW0U12+Vnwjax1JK5mpbpcHhrwXScCxplXHnZoRo4dhXCjJmkkeeB08/wCiFPbJbQ+i1LXXtG+zJByt2+XH39q0cfJOOYj8KeRireJmPK7dJNE9sUeIQD+0ULxM0jTNFf8ALMcezLc+AcOa6LhlcyohjmjN2SsbI3weA4fNQtTEJWOYbFr2lp7CHCx+BUd0PSuOFQNebujM0RPdHK9rfgAPJeo8pdEREBERAREQFjnkytJWRR2JS3IaPEoNRuputhgWJgWeMIMgX5nikNbjZf7Wese9ouBmETnPY0E8LiNrfNfojaKvFNSzzH9HDI/za0kfGy/PHRfhDKisvJ1tyzesaX5M8zXAxNv3kHTuQdKLZi31p6C71kIjF6LveMefLnLPa9m6yyYWKc5aehzx4g8+srz3FPmbd40PVtvJTfutpdtvEcc+X1maD/1PdmP0bfWBjDw3Pl+yvZwwU5ywUbXR1znes81RcU+Zo3g46W3kpuOzlcIKd0jUD46RsMELG0NOY301Q2XOZHS3DwDmN+tI46cMl9QRbs2BVwqKaCYfpIY5P2mgn5rmG0+Gxto5abdQsoIYhJQT+kAukqCHOtfN1sxdLpblzvpZ+hyu32FxAm5idJEe6zy5o8mvYPJBcJAtrDZeLfMLA9YY35XAoJxQO3xPqyutx9EqP+k5TrHXF+1Ya6mE0b43ey9jmHwcC0/NBUNgrDDaO392i95aCfjdV7pSxAgRQjgbyOPvaPdr7wt3oxqHCj9Gk/O0kstPICLey4lpA7LOAB+qV56RoWGOGRwvllDew5XAki/3QqOREzjnS/jzEZImVMw3bGPCyY2wh89m757nEZbtDmsYLcmltzpc3HABX7YvbVmIXaAQ9oBcDroeBB5hcn6TaAGvmcxuj8pdbtyhv4fNW/ojwyOKN0g9t1gbngBwGq7FYrERDlrTaZmPKttvhzRNmGmdtz48FRq8hmlyXHRoV+22c4yNtqA0aeZXM8VY5z3HsGUDszXzH3AjzXl5Ij1Z+HqYZn0oaM8gcQ1vsjn+seZ9915Bss9PEFjezrKe40anbrmwONiWmyPPWgABJ5s+ifIC3kO1TXRFERhcDiLGR00tu6SaRzf3SD5rnGFUcjKRzY77+vIpaca3yuvvJDbg0MzOv9Udq7hhlEynhjhjFmRMbG3wYA0fJelg30Rt5efXqT0tlERWqRERAREQeZH5QT2KFLsxJW7ic1ur71oNKDYYFmasEZWa6Ck9M9dusLlaDYyviiH7Ykd+6xw81zbop2diqTJPPESYZI3U7t5uw+VgLt2L+19A+5WDp/rtKWDtdJMfugMb/ABP9y1uj3CmzUkIq6YsEMwqKKQzCMVEkhc4NAPH2WcO7hqgn7yFpxT0BwxIRGMUu9NzFvMufJa/C/L+ayGgZCSynomvjrpHetCagH0cubd7XEHS28lPlyuF5e+TL6zdRBmJCPdCnfUBo3ZkyB5DiLaEr4KRkEgZBRsdHiDnHEs05/JXbd4Zci7RnmNx8LhB5fhMJtSzwU4wyIRuo5XT6yTv1tmz9bMXy3HO3O+mh0GSvidW0cgs+ORry3sd1opLdoBY3Vb/q6nsKaeCmGFxCOSimNT+cmfc2LhJ1g4vl7tOd9K5sZNU0+POFWxsctVHJmawgs4Z2kWJ47l3O/W5Xsg7S5a7wsjnLC5yCRwya4ynkt5QNNNlcCp1puLoOebZ0b8OqjicLS6CRrWV8bRcgN0ZO0cy0aHu8SRp7V08ldHAaa0kZOfMHDKeGU6+a6e9oIIIBBFiDqCDxuFz6u2MqKF7pcKLTE4lz6GV2WMk8TTyfoz9U9XyAAhenVGk8d+i22himxrKq0s5O80JEZNr25XPH/VfcDw9tPcRvcQeThb4garJHtjC127qM1LMOMdS3d93VkPUeO8HVRlPjIhdu5rNAdaKX9FIy/wCTs/hntYFp1uLjQgqExrw7E78tzaGnnqHtbGA1oHWkJFz22HFVzFsCbGHFgNz7Wt+HMK4NrmO1DgR3G6icYqo2DM+RjR2ucG/NZ7Y4nfzLRTNNdfEKAICDwUnhOGR9aaodkgYOu79b6jLalx4WGvmQq9ie04E5DWsdED9G4c/wNyAL87eCjqnaGpqZWPDsoicHxMYLMjc03aWt7bjibk/Bcpx5jvbwsycmJjVPL9C7EYJI+T0+qjMbyzd0sB4wQG2rmjQSvsCewAN7VdVpYNXipgimboJI2vtzGYAkHvBuPJbq3R4efIiIugiIgL451hc8l9VexLFwav0Vp1ZCJpPvuLIx4dWQkfZQfayUucvMTV8DblbUbEHuJiz2XxoXtB+dumes32KOjafzUcUIvwDnAyE//qL+Cv8ATYS2a1NVUjWQUbofV8m/y79wboL362awNh29uq5YxjMTxd+9flimqZnvdmDbRMzv9o6N6jALrqrcMjmc2mq6ZkdNSPh9XSekWM5DbMF79a4A0Hgg2KGpZK0VNVHG2pcRHLEx7QWiPM0h4eSTYl4tex006xvtNqIXODHhhBI6wlgbuxZps10bGkgHlfj3DTQwvEnujb6wjfSyOlklbHHIOD3EPu25JBfdw7c/VvlW9PUwxnPJLLxBbZ7usB1jcOjba3W6oubDggiPRIH3paqOlOHwuvHMZcmaqfI54bcPAJcyTMQABdxAFtBUdqKupgrqGqrBBHUMms9kLr/2dsjcjiCSQDecX5jsNwrdVZKp7zXx03q+Ux1Ec7p2jNUECNjQ9r7G0bS020OQ6kGyrHSLA6WkdJXtp4q9rrQtif1n0weB7OY3AzPI52HLUIO1uateRi1tl6/0mjp5uckMbj4lozfG6kHNQaGoKm8NmzNt2KLe1atZUPije+P22NL2jkS0Xynudax8UFqRa2G1rKiKOaM3ZIxsjT9V4Dh8CtlBzvpIpDV1lFTEAxtL53gi4doWgEHlYO071D13R9QvvliMd+O6e5gPi2+X4K+4lTMdOZbXeGCO/YLlxA949y13MVE73K3tqHMj0ZwC+WWcffb+DUg6NKZpu4yPP1nAfFgafeV0p0S8bpc3LnZwLbPZT0Oe7fzbxmaOy2hHy96hIJWsc2w56+9d22x2fNVH1dXNByjtJ7D5Bclw3ZmVjzvo3MtfRwsoWvqJmy6ld6ivl1row2pYwsoZSAXhz6cn6RBzSM8dQ4dt3dgXT1+ZNo4S2FsjCWvhex7HN0cNQLg8iDkN/qrt/RntZ60omyusJmHdzgcM7QCHDucCHd1yOSnxr9VIR5NOnJK2IiLQziIiAuMbU4ucO2hdJOSIKiCNmY+y1ugB8GvYb9geSuzqm9JmxLcVpwGkNniu6F54a+0x31XWHgQD3EJKEgjRbcYXB9mNtarB5PQ62J5jYbZDbexDluyTZ7OwXt2Hkuz7PY9TVzM9PK2QcwNHN+2w9ZvmEEwFFbWYh6NRVM3NkMjm/aykN+JClQuf9OFfusNMfOeaOPybeU+X5MDzQcn6NcIZU1DmzRB9MIXNqHueIxEHdaN2e4s7PGAPErqfqyOb+zVVJGympXxDDnuqLb5wbZovmub2bp38yFRejmgfJBIyaGJ2Hzl5qpnybt0W5aHR9bMMozhp4H2uQGt3dh0UpbBWQQx0tO+IYY81IG/OWzG+1d1wG6fPigxysqHt9NdRw+t2Rljaff6GEvLS4x7yx0c/n58AtmaN4LWwRU8kcrizFWvqS9tM0sG8YwF/UaAZNAOQ0HEabW1Dwat1NTtxoRubHTmcdaDPbMY952F4vflx5DI2mDXH0WCkcahwGNNNQHbm7TvBbPYaun4DiOHMB4dR0waIpmUQwZrWGleZSXOnLrnr59dTPftHP2gtLHKKSpilgqzResnskFLlDr+jD2gHEaEtEwHPj9a236NSNY1snoRwZrWmB5e57vSM5vdxdrqZb91wdMwX0ifWOaai9bOEho5BHe0F9RctNrgTWBvpf2rOQbfQniG9wxrDe8MskevGxIlHl+Ut91XwrlHQ7I6nrMQo3va5wcH3bo0uY5zJS0dl3sHkuruKDDIFVdv8abR0cr7jO5pjiHa94sNOYGrj3NK97X7c0mHgh788vKGOxf8AePBg8fIFc2wHDKvaWtEs4LaWM2fa4Y1vHdxH6T3aZnchrp1WoOwdFMT2YTRh/HdFw+w57nRfuFqti8QxBjQ1oAa0AADgANAAvaCCe2xd9px97iV4IWxWNs93v9/9FYCFTKcPNl8LUI1X1y46xlqru2MgENrak6d1lYyqVtvN1msvwF/f/QVHInWOV/GrvJCkbRf8NJ9gn3WP4L70GY6afERAT1KppYewSMDnxn4Pb94LFtE+1PJ3jKPNVnZB5ZXUjhpappz5b1l/hdc4U/sT5nuh+ukRFvYRERAREQQW1GyVJiLMlRGHEey8aPafquGo8OB5rjeO9FNfQv3tDI6UN9ksdup2jxBAd5EeC/QK+EIPzzhvSniVE7dVcYlt9GZhhm/aA1HeWnxUf0mbcx4q2mEcb4xHvC9r8p6zsgblLTqAA7Ww4r9D4pg1PUtyTwskb2PaHD4rn+NdC1FM7NC+WD6rCHs/ZfcjwBsgpOztfSNghonGlNJPBvK576gMlbUWDrAOeCMpZEAGg8+w3sUboJiIauKlFJTvhGGPFRrIQLNBcJLuuA3Qgfe4rQqugqb9HWsI5B8Lh8Q8/JRc/QfXj2ZaZ3nI3/sKCxekzvAqJKelbjTY3iKLemzoc1icgksTlMlru8+Qyxy5JC6kjo95JI31wDI52S4vJlDnWA1nv2nt1VQHQtiY4ejf4r/8te2dCeJOPWfSj/7JD/40FkfW0UYDHuojhGRu5Zq9++z6nLq4657nkOPNaNZtNEI5TNW0ZrQZBSVEMRl3URtZpcxjg0kZxzIDuaxU/QVUk9erhb9mN7/mWqaoegmAfnqyV3bu2MjH72dBRTto2nxFtbCN870dsc5LdwJZctnvAsbAkRnUfR5LNPtjjOLuMdM14aTYspWEAX/5k5NxpzzNHcuvYT0V4VTkH0beOHOZzpP3ScvwVypqZkbQ1jWtaODWgADwAQcX2R6EySJMRk04mGJxuT/8kvzDf2l2WgoY6eNsULGsY0Wa1gAaB3ALYRAREQRWKOs/7o+ZWmXLcxEdf7o/FRFbmyOLdCASPFU28rI8NslfVhppg4XBB1IuO1pLT8QVkL7Lg8PIbqeC51tNNnneb3HAeSvc8mcvYf1bjy/oLnM2rj4rDzLdohu4Ve8yqG1UvssJ0AzEd5vZV+lnMTg8e01wc37QNx8lLbYHLO4dzD+41V+ma+V3VaSB7lp48RXHEqORM2yTp+vNncairqeOohN2yNvbm13BzXdhBuD4KSXIugaZ8QqKd50dlmaOwizJPeN37l11aq2i0bhmvWazqRERSREREBERAREQEREBERAREQEREBERB4kja4WcAR2EXHxSOJrRZrQB2AAfJe0QEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQf/Z",
+                "image": "data:image/jpeg;base64,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",
                 "description": "envio a domicilio"
             },
             {
@@ -477,6 +481,9 @@
         cart = JSON.parse(localStorage.getItem('zonaAnimalCart')) || [];
         orders = JSON.parse(localStorage.getItem('zonaAnimalOrders')) || [];
         appointments = JSON.parse(localStorage.getItem('zonaAnimalAppointments')) || [];
+        
+        const savedPassword = localStorage.getItem('zonaAnimalPassword');
+        adminPassword = savedPassword || 'password123';
     }
     
     // --- INITIALIZATION ---
@@ -666,7 +673,9 @@
             status: 'confirmado',
             items: [...cart],
             total: total,
-            address: customerAddress
+            address: customerAddress,
+            phone: customerPhone,
+            lastUpdate: ''
         };
         orders.unshift(newOrder);
         cart = [];
@@ -696,6 +705,7 @@
                 <div class="border-t pt-4">
                     <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
                     <p><strong>Dirección:</strong> ${order.address}</p>
+                    ${order.lastUpdate ? `<p class="mt-2 p-2 bg-blue-50 rounded-lg text-blue-800"><strong>Última Actualización:</strong> ${order.lastUpdate}</p>` : ''}
                 </div>
                 <div class="border-t pt-4 mt-4">
                     <button onclick="sendTrackingByWhatsapp('${order.id}')" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700">
@@ -726,6 +736,9 @@
         let trackingMessage = `*Seguimiento de mi Pedido - Zona Animal* 🐾\n\n`;
         trackingMessage += `*Número de Pedido:* ${order.id}\n`;
         trackingMessage += `*Estado:* ${statusConfig[order.status].text}\n`;
+        if (order.lastUpdate) {
+            trackingMessage += `*Última Actualización:* ${order.lastUpdate}\n`;
+        }
         trackingMessage += `*Total:* $${order.total.toFixed(2)}\n\n`;
         trackingMessage += `¡Gracias por tu compra!`;
 
@@ -793,7 +806,7 @@
         e.preventDefault();
         const user = document.getElementById('admin-username').value;
         const pass = document.getElementById('admin-password').value;
-        if (user === 'admin' && pass === 'password123') {
+        if (user === 'admin' && pass === adminPassword) {
             isAdminLoggedIn = true;
             document.getElementById('admin-login').classList.add('hidden');
             document.getElementById('admin-panel').classList.remove('hidden');
@@ -827,6 +840,7 @@
         renderAdminProducts();
         renderAdminOrders();
         renderAdminAppointments();
+        renderAdminSecurity();
     }
 
     // Admin Products
@@ -939,17 +953,81 @@
             <h3 class="text-xl font-bold mb-6">Gestión de Envíos</h3>
             <div class="space-y-4">${orders.map(order => `
                 <div class="bg-gray-50 p-4 rounded-lg">
-                    <p><strong>ID:</strong> ${order.id} - <strong>Estado:</strong> ${order.status}</p>
-                    <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
-                    <select onchange="updateOrderStatus('${order.id}', this.value)" class="mt-2 p-1 border rounded">
-                        <option value="confirmado" ${order.status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
-                        <option value="preparando" ${order.status === 'preparando' ? 'selected' : ''}>Preparando</option>
-                        <option value="en-camino" ${order.status === 'en-camino' ? 'selected' : ''}>En Camino</option>
-                        <option value="entregado" ${order.status === 'entregado' ? 'selected' : ''}>Entregado</option>
-                    </select>
-                </div>`).join('')}
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p><strong>ID:</strong> ${order.id} | <strong>Cliente:</strong> ${order.phone}</p>
+                            <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
+                            ${order.lastUpdate ? `<p class="text-sm text-blue-600"><strong>Última act:</strong> ${order.lastUpdate}</p>` : ''}
+                        </div>
+                        <select onchange="updateOrderStatus('${order.id}', this.value)" class="p-1 border rounded">
+                            <option value="confirmado" ${order.status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
+                            <option value="preparando" ${order.status === 'preparando' ? 'selected' : ''}>Preparando</option>
+                            <option value="en-camino" ${order.status === 'en-camino' ? 'selected' : ''}>En Camino</option>
+                            <option value="entregado" ${order.status === 'entregado' ? 'selected' : ''}>Entregado</option>
+                        </select>
+                    </div>
+                    ${order.status === 'en-camino' ? `
+                    <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="update-${order.id}" class="w-full p-2 border rounded" placeholder="Ej: El repartidor está en la calle principal">
+                        <div class="flex gap-2">
+                             <button onclick="sendDeliveryUpdate('${order.id}')" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm w-full">Enviar Nota</button>
+                             <button onclick="sendCurrentLocation('${order.id}')" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm w-full">📍 Enviar Ubicación</button>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>`).join('') || '<p class="text-center text-gray-500">No hay pedidos para mostrar.</p>'}
             </div>
         </div>`;
+    }
+
+    function sendCurrentLocation(orderId) {
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        if (!navigator.geolocation) {
+            showNotification('Geolocalización no es soportada por tu navegador.', 'error');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                
+                let locationMessage = `¡Hola! El repartidor de tu pedido #${order.id} de Zona Animal está aquí:\n\n${mapsLink}\n\nPuedes seguir su ubicación en tiempo real.`;
+
+                const customerPhone = order.phone.replace(/\D/g, '');
+                const whatsappUrl = `https://wa.me/521${customerPhone}?text=${encodeURIComponent(locationMessage)}`;
+                window.open(whatsappUrl, '_blank');
+                showNotification('Enlace de ubicación enviado al cliente.', 'success');
+            },
+            () => {
+                showNotification('No se pudo obtener la ubicación. Asegúrate de tener el GPS activado y dar los permisos necesarios.', 'error');
+            }
+        );
+    }
+
+    function sendDeliveryUpdate(orderId) {
+        const order = orders.find(o => o.id === orderId);
+        const updateText = document.getElementById(`update-${orderId}`).value;
+
+        if (!order || !updateText) {
+            showNotification('Escribe un mensaje de actualización.', 'error');
+            return;
+        }
+
+        order.lastUpdate = updateText;
+        saveData();
+        renderAdminOrders();
+
+        let updateMessage = `¡Actualización de tu pedido #${order.id} de Zona Animal! 📍\n\n`;
+        updateMessage += `El repartidor informa: "${updateText}"\n\n`;
+        updateMessage += `Estado actual: ${order.status}`;
+        
+        const customerPhone = order.phone.replace(/\D/g, ''); // Clean phone number
+        const whatsappUrl = `https://wa.me/521${customerPhone}?text=${encodeURIComponent(updateMessage)}`;
+        window.open(whatsappUrl, '_blank');
+        showNotification('Actualización enviada al cliente.', 'success');
     }
 
     function updateOrderStatus(orderId, newStatus) {
@@ -996,9 +1074,41 @@
         });
     }
 
+    // Admin Security
+    function renderAdminSecurity() {
+        const container = document.getElementById('admin-seguridad');
+        if (!container) return;
+        container.innerHTML = `
+        <div class="bg-white p-6 rounded-xl shadow-lg border max-w-md mx-auto">
+            <h3 class="text-xl font-bold mb-6">Cambiar Contraseña</h3>
+            <form id="change-password-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña</label>
+                    <input type="password" id="new-password" required class="w-full p-2 border rounded" minlength="4">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg">Guardar Contraseña</button>
+            </form>
+        </div>
+        `;
+        document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
+    }
+
+    function handleChangePassword(e) {
+        e.preventDefault();
+        const newPassword = document.getElementById('new-password').value;
+        if (newPassword && newPassword.length >= 4) {
+            adminPassword = newPassword;
+            saveData();
+            showNotification('Contraseña actualizada correctamente.', 'success');
+            e.target.reset();
+        } else {
+            showNotification('La contraseña debe tener al menos 4 caracteres.', 'error');
+        }
+    }
+
     // --- DATA MANAGEMENT MODALS ---
     function showExportModal() {
-        const dataStr = JSON.stringify({ products, orders, appointments, cart }, null, 2);
+        const dataStr = JSON.stringify({ products, orders, appointments, cart, adminPassword }, null, 2);
         const modal = document.getElementById('data-modal');
         modal.innerHTML = `
         <div class="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
@@ -1054,6 +1164,7 @@
                 orders = data.orders;
                 appointments = data.appointments;
                 cart = data.cart;
+                adminPassword = data.adminPassword || 'password123';
                 saveData();
                 renderAll();
                 closeDataModal();
