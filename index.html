@@ -1,1310 +1,680 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zona Animal - Tienda y Citas Veterinarias</title>
+    <title>Zona Animal - Tienda y Veterinaria</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal.show { display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
-        .cart-badge { animation: bounce 0.5s ease-in-out; }
+        
+        .gradient-bg { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1); }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .modal.show { display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease-out; }
+        
+        .cart-sidebar { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .cart-open .cart-sidebar { transform: translateX(0); }
+        .cart-open .cart-overlay { opacity: 1; pointer-events: auto; }
+        .cart-overlay { transition: opacity 0.3s ease; opacity: 0; pointer-events: none; }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes bounce { 0%, 20%, 60%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } 80% { transform: translateY(-5px); } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        /* Loader */
+        #loader { position: fixed; inset: 0; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 flex flex-col min-h-screen">
+
+    <!-- Loader de Carga -->
+    <div id="loader">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600 mb-4"></div>
+        <h2 class="text-xl font-bold text-gray-700">Conectando con Zona Animal...</h2>
+        <p class="text-gray-500 text-sm">Sincronizando productos en la nube</p>
+    </div>
+
     <!-- Header -->
-    <header class="gradient-bg text-white shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
+    <header class="gradient-bg text-white shadow-lg sticky top-0 z-40 bg-opacity-95 backdrop-blur">
+        <div class="container mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                        <span class="text-2xl text-blue-600">🐾</span>
+                <div class="flex items-center space-x-3 group cursor-pointer" onclick="window.scrollToSection('hero')">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                        <span class="text-2xl">🐾</span>
                     </div>
-                    <h1 class="text-2xl font-bold">Zona Animal</h1>
+                    <h1 class="text-2xl font-bold tracking-tight">Zona Animal</h1>
                 </div>
-                <nav class="hidden md:flex space-x-6">
-                    <a href="#productos" onclick="scrollToSection('productos')" class="hover:text-blue-200 transition-colors cursor-pointer">Productos</a>
-                    <a href="#citas" onclick="scrollToSection('citas')" class="hover:text-blue-200 transition-colors cursor-pointer">Agendar Cita</a>
-                    <a href="#seguimiento" onclick="scrollToSection('seguimiento')" class="hover:text-blue-200 transition-colors cursor-pointer">Seguimiento</a>
-                    <a href="#admin" onclick="scrollToSection('admin')" class="hover:text-blue-200 transition-colors cursor-pointer">Admin</a>
-                    <a href="#contacto" onclick="scrollToSection('contacto')" class="hover:text-blue-200 transition-colors cursor-pointer">Contacto</a>
+                
+                <nav class="hidden md:flex space-x-8 font-medium">
+                    <a href="#productos" onclick="window.scrollToSection('productos')" class="hover:text-yellow-300 transition-colors">Productos</a>
+                    <a href="#citas" onclick="window.scrollToSection('citas')" class="hover:text-yellow-300 transition-colors">Citas</a>
+                    <a href="#seguimiento" onclick="window.scrollToSection('seguimiento')" class="hover:text-yellow-300 transition-colors">Rastreo</a>
+                    <a href="#admin" onclick="window.scrollToSection('admin')" class="hover:text-yellow-300 transition-colors">Admin</a>
                 </nav>
+
                 <div class="flex items-center space-x-4">
-                    <button onclick="toggleCart()" class="relative p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors">
-                        <span class="text-xl">🛒</span>
-                        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                    <button onclick="window.toggleCart()" class="relative p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-all group">
+                        <span class="text-xl group-hover:scale-110 inline-block">🛒</span>
+                        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm border border-white">0</span>
                     </button>
-                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors">
+                    <button onclick="window.toggleMobileMenu()" class="md:hidden p-2 hover:bg-white hover:bg-opacity-20 rounded-lg">
                         <span class="text-xl">☰</span>
                     </button>
                 </div>
             </div>
             
-            <div id="mobile-menu" class="md:hidden hidden bg-white bg-opacity-10 backdrop-blur-sm mt-4 rounded-lg">
-                <div class="px-4 py-2 space-y-2">
-                    <a href="#productos" onclick="scrollToSection('productos'); toggleMobileMenu();" class="block py-2 hover:text-blue-200 transition-colors cursor-pointer">Productos</a>
-                    <a href="#citas" onclick="scrollToSection('citas'); toggleMobileMenu();" class="block py-2 hover:text-blue-200 transition-colors cursor-pointer">Agendar Cita</a>
-                    <a href="#seguimiento" onclick="scrollToSection('seguimiento'); toggleMobileMenu();" class="block py-2 hover:text-blue-200 transition-colors cursor-pointer">Seguimiento</a>
-                    <a href="#admin" onclick="scrollToSection('admin'); toggleMobileMenu();" class="block py-2 hover:text-blue-200 transition-colors cursor-pointer">Admin</a>
-                    <a href="#contacto" onclick="scrollToSection('contacto'); toggleMobileMenu();" class="block py-2 hover:text-blue-200 transition-colors cursor-pointer">Contacto</a>
-                </div>
+            <div id="mobile-menu" class="md:hidden hidden mt-4 pb-2 border-t border-white/20 pt-2 animate-[fadeIn_0.3s_ease]">
+                <a href="#productos" onclick="window.scrollToSection('productos'); window.toggleMobileMenu();" class="block py-3 px-2 hover:bg-white/10 rounded">Productos</a>
+                <a href="#citas" onclick="window.scrollToSection('citas'); window.toggleMobileMenu();" class="block py-3 px-2 hover:bg-white/10 rounded">Agendar Cita</a>
+                <a href="#admin" onclick="window.scrollToSection('admin'); window.toggleMobileMenu();" class="block py-3 px-2 hover:bg-white/10 rounded">Admin</a>
             </div>
         </div>
     </header>
 
     <!-- Hero Section -->
-    <section class="gradient-bg text-white py-16">
-        <div class="container mx-auto px-4 text-center">
-            <h2 class="text-4xl md:text-5xl font-bold mb-6">Cuidamos a tu mejor amigo</h2>
-            <p class="text-xl mb-8 max-w-2xl mx-auto">Productos de calidad y atención veterinaria profesional para el bienestar de tu mascota</p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onclick="scrollToSection('productos')" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Ver Productos</button>
-                <button onclick="scrollToSection('citas')" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">Agendar Cita</button>
+    <section id="hero" class="relative bg-gray-900 text-white py-20 overflow-hidden">
+        <div class="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center"></div>
+        <div class="absolute inset-0 gradient-bg opacity-80"></div>
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <h2 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight animate-[slideUp_0.6s_ease-out]">Cuidamos a tu<br>mejor amigo</h2>
+            <p class="text-xl text-gray-100 mb-10 max-w-2xl mx-auto animate-[slideUp_0.8s_ease-out]">Productos premium y atención veterinaria profesional.</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center animate-[slideUp_1s_ease-out]">
+                <button onclick="window.scrollToSection('productos')" class="bg-white text-indigo-600 px-8 py-3.5 rounded-full font-bold hover:bg-yellow-300 hover:text-indigo-800 transition-all shadow-lg">Ver Catálogo</button>
+                <button onclick="window.scrollToSection('citas')" class="bg-transparent border-2 border-white text-white px-8 py-3.5 rounded-full font-bold hover:bg-white hover:text-indigo-600 transition-all">Agendar Cita</button>
             </div>
         </div>
     </section>
 
     <!-- Productos Section -->
-    <section id="productos" class="py-16">
+    <section id="productos" class="py-16 bg-white">
         <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Nuestros Productos</h2>
-            <div class="flex flex-wrap justify-center gap-4 mb-8">
-                <button onclick="filterProducts('todos', this)" class="filter-btn bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors">Todos</button>
-                <button onclick="filterProducts('alimento', this)" class="filter-btn bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300 transition-colors">Alimento</button>
-                <button onclick="filterProducts('juguetes', this)" class="filter-btn bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300 transition-colors">Juguetes</button>
-                <button onclick="filterProducts('medicamentos', this)" class="filter-btn bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300 transition-colors">Medicamentos</button>
-                <button onclick="filterProducts('accesorios', this)" class="filter-btn bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300 transition-colors">Accesorios</button>
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Nuestros Productos</h2>
+                <div class="w-20 h-1 bg-indigo-600 mx-auto rounded-full"></div>
             </div>
-            <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-gray-50 p-4 rounded-2xl shadow-inner">
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button onclick="window.filterProducts('todos', this)" class="filter-btn bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-medium transition-all shadow-md">Todos</button>
+                    <button onclick="window.filterProducts('alimento', this)" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-5 py-2 rounded-full text-sm font-medium transition-all border">Alimento</button>
+                    <button onclick="window.filterProducts('juguetes', this)" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-5 py-2 rounded-full text-sm font-medium transition-all border">Juguetes</button>
+                    <button onclick="window.filterProducts('medicamentos', this)" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-5 py-2 rounded-full text-sm font-medium transition-all border">Medicamentos</button>
+                    <button onclick="window.filterProducts('accesorios', this)" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-5 py-2 rounded-full text-sm font-medium transition-all border">Accesorios</button>
+                </div>
+                <div class="relative w-full md:w-auto">
+                    <input type="text" id="search-product" oninput="window.searchProducts()" placeholder="Buscar producto..." class="w-full md:w-64 pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                </div>
+            </div>
+
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
         </div>
     </section>
 
     <!-- Citas Section -->
-    <section id="citas" class="py-16 bg-gray-100">
+    <section id="citas" class="py-16 bg-indigo-50">
         <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Agendar Cita</h2>
-            <div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg border">
-                <form id="appointment-form" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del dueño</label>
-                            <input type="text" id="owner-name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+                <div class="md:w-1/3 bg-indigo-600 p-8 text-white flex flex-col justify-center">
+                    <h3 class="text-2xl font-bold mb-4">Reserva tu cita</h3>
+                    <p class="mb-6 text-indigo-100">Expertos en el cuidado de tu mascota.</p>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex items-center">✅ Atención personalizada</li>
+                        <li class="flex items-center">✅ Equipos modernos</li>
+                        <li class="flex items-center">✅ Urgencias 24/7</li>
+                    </ul>
+                </div>
+                <div class="md:w-2/3 p-8">
+                    <form id="appointment-form" class="space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <input type="text" id="owner-name" placeholder="Nombre del dueño" required class="input-field w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                            <input type="tel" id="owner-phone" placeholder="Teléfono" required class="input-field w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-                            <input type="tel" id="owner-phone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de la mascota</label>
-                            <input type="text" id="pet-name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Animal</label>
-                            <select id="pet-type" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <input type="text" id="pet-name" placeholder="Nombre de mascota" required class="input-field w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                            <select id="pet-type" required class="input-field w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
                                 <option value="Perro">Perro</option>
                                 <option value="Gato">Gato</option>
                                 <option value="Conejo">Conejo</option>
-                                <option value="Ave">Ave</option>
-                                <option value="Hámster">Hámster</option>
                                 <option value="Otro">Otro</option>
                             </select>
                         </div>
-                    </div>
-                     <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Raza de la mascota</label>
-                            <input type="text" id="pet-breed" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Motivo de Cita</label>
-                        <select id="appointment-reason" onchange="handleReasonChange()" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="Consulta por Urgencias - $450">Consulta por Urgencias - $450</option>
+                        <input type="text" id="pet-breed" placeholder="Raza" required class="input-field w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                        <select id="appointment-reason" onchange="window.handleReasonChange()" required class="input-field w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
                             <option value="Consulta General - $290">Consulta General - $290</option>
-                            <option value="Consulta General a Domicilio - $350">Consulta General a Domicilio - $350</option>
-                            <option value="Baño para Mascotas - $100">Baño para Mascotas - $100</option>
-                            <option value="Rasurado - $150">Rasurado - $150</option>
+                            <option value="Urgencias - $450">Urgencias - $450</option>
+                            <option value="Baño - $100">Baño - $100</option>
+                            <option value="Domicilio - $350">A Domicilio - $350</option>
                         </select>
-                    </div>
-                    <div id="address-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Dirección (para consulta a domicilio)</label>
-                        <textarea id="appointment-address" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="2" placeholder="Escribe la dirección completa..."></textarea>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de la cita</label>
-                            <input type="date" id="appointment-date" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <div id="address-container" class="hidden">
+                            <textarea id="appointment-address" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl" placeholder="Dirección completa..."></textarea>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Hora de la cita</label>
-                            <select id="appointment-time" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <input type="date" id="appointment-date" required class="input-field w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                            <select id="appointment-time" required class="input-field w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
                                 <option value="09:00">09:00 AM</option>
-                                <option value="10:00">10:00 AM</option>
-                                <option value="11:00">11:00 AM</option>
                                 <option value="12:00">12:00 PM</option>
-                                <option value="13:00">01:00 PM</option>
-                                <option value="14:00">02:00 PM</option>
-                                <option value="15:00">03:00 PM</option>
                                 <option value="16:00">04:00 PM</option>
-                                <option value="17:00">05:00 PM</option>
                             </select>
                         </div>
-                    </div>
-                    <button type="submit" class="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors">Agendar Cita por WhatsApp</button>
-                </form>
+                        <button type="submit" class="w-full bg-green-500 text-white py-4 px-6 rounded-xl font-bold hover:bg-green-600 shadow-lg">Agendar Cita</button>
+                    </form>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Seguimiento Section -->
-    <section id="seguimiento" class="py-16">
+    <section id="seguimiento" class="py-16 bg-white">
         <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Seguimiento de Pedidos</h2>
-            <div class="max-w-md mx-auto mb-12 bg-white p-6 rounded-xl shadow-lg border">
-                <h3 class="text-lg font-semibold mb-4 text-center">Rastrear tu Pedido</h3>
-                <div class="space-y-4">
-                    <input type="text" id="order-search" placeholder="Ingresa tu número de pedido" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    <button onclick="searchOrder()" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700">Buscar Pedido</button>
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-800">Rastrea tu Pedido</h2>
+            <div class="max-w-xl mx-auto mt-8">
+                <div class="flex gap-3 mb-8">
+                    <input type="text" id="order-search" placeholder="Ej: VET1758..." class="flex-1 px-5 py-3 border border-gray-300 rounded-xl">
+                    <button onclick="window.searchOrder()" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-indigo-700">Buscar</button>
                 </div>
+                <div id="order-result" class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hidden p-6"></div>
             </div>
-            <div id="order-result" class="max-w-2xl mx-auto hidden bg-white p-6 rounded-xl shadow-lg border"></div>
         </div>
     </section>
 
     <!-- Admin Section -->
-    <section id="admin" class="py-16 bg-gray-100">
+    <section id="admin" class="py-16 bg-gray-50">
         <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Panel de Administración</h2>
-            <div id="admin-login" class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg border">
-                 <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-2xl text-white">🔐</span></div>
-                    <h3 class="text-xl font-bold text-gray-800">Acceso Administrativo</h3>
-                    <p class="text-gray-600 text-sm mt-2">Usuario: admin / Contraseña por defecto: password123</p>
+            <div id="admin-login" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+                 <div class="text-center mb-8">
+                    <span class="text-4xl">🔐</span>
+                    <h3 class="text-2xl font-bold text-gray-800 mt-4">Acceso Admin</h3>
                 </div>
-                <form id="admin-login-form" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Usuario</label>
-                        <input type="text" id="admin-username" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
-                        <input type="password" id="admin-password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700">Iniciar Sesión</button>
+                <form id="admin-login-form" class="space-y-5">
+                    <input type="text" id="admin-username" placeholder="Usuario" required class="w-full px-4 py-3 border rounded-xl">
+                    <input type="password" id="admin-password" placeholder="Contraseña" required class="w-full px-4 py-3 border rounded-xl">
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700">Entrar</button>
                 </form>
             </div>
-            <div id="admin-panel" class="max-w-6xl mx-auto hidden">
-                <div class="flex justify-between items-center mb-8">
-                    <div class="flex items-center space-x-3">
-                        <span class="text-2xl">👨‍⚕️</span>
-                        <div>
-                            <h3 class="text-lg font-semibold">Bienvenido, Administrador</h3>
-                            <p class="text-sm text-gray-600">Panel de control Zona Animal</p>
-                        </div>
-                    </div>
-                    <button onclick="logoutAdmin()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Cerrar Sesión</button>
-                </div>
-                <div class="flex flex-wrap justify-center gap-4 mb-8 border-b pb-4">
-                    <button onclick="showAdminTab('productos', this)" class="admin-tab bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">Gestionar Productos</button>
-                    <button onclick="showAdminTab('envios', this)" class="admin-tab bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300">Gestionar Envíos</button>
-                    <button onclick="showAdminTab('citas', this)" class="admin-tab bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300">Gestionar Citas</button>
-                    <button onclick="showAdminTab('seguridad', this)" class="admin-tab bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300">Seguridad</button>
-                </div>
-                <div id="admin-productos" class="admin-content"></div>
-                <div id="admin-envios" class="admin-content hidden"></div>
-                <div id="admin-citas" class="admin-content hidden"></div>
-                <div id="admin-seguridad" class="admin-content hidden"></div>
-                
-                <!-- Data Management Section -->
-                <div id="data-management" class="mt-12 bg-white p-6 rounded-xl shadow-lg border">
-                    <h3 class="text-xl font-bold mb-4 text-center">Gestión de Datos (Copia de Seguridad)</h3>
-                    <p class="text-center text-gray-600 mb-6 text-sm max-w-2xl mx-auto">Debido a que este es un demo, los datos no se guardan en un servidor. Usa estos botones para guardar (exportar) y cargar (importar) todos los productos, pedidos y citas. Guarda el texto exportado en un archivo en tu PC.</p>
-                    <div class="flex justify-center gap-4">
-                        <button onclick="showExportModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">Exportar Datos</button>
-                        <button onclick="showImportModal()" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700">Importar Datos</button>
-                    </div>
+
+            <div id="admin-panel" class="max-w-7xl mx-auto hidden">
+                <div class="bg-white rounded-2xl shadow-xl p-6 mb-8 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800">Panel de Control</h3>
+                    <button onclick="window.logoutAdmin()" class="text-red-500 font-semibold">Cerrar Sesión</button>
                 </div>
 
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <button onclick="window.showAdminTab('productos', this)" class="admin-tab bg-indigo-600 text-white p-3 rounded-xl shadow-md">Productos</button>
+                    <button onclick="window.showAdminTab('envios', this)" class="admin-tab bg-white text-gray-600 p-3 rounded-xl shadow-sm">Envíos</button>
+                    <button onclick="window.showAdminTab('citas', this)" class="admin-tab bg-white text-gray-600 p-3 rounded-xl shadow-sm">Citas</button>
+                    <button onclick="window.showAdminTab('seguridad', this)" class="admin-tab bg-white text-gray-600 p-3 rounded-xl shadow-sm">Seguridad</button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 min-h-[400px]">
+                    <div id="admin-productos" class="admin-content"></div>
+                    <div id="admin-envios" class="admin-content hidden"></div>
+                    <div id="admin-citas" class="admin-content hidden"></div>
+                    <div id="admin-seguridad" class="admin-content hidden"></div>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer id="contacto" class="bg-gray-800 text-white py-12">
-        <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
-                <div>
-                    <div class="flex items-center justify-center md:justify-start space-x-3 mb-4">
-                         <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                            <span class="text-2xl text-white">🐾</span>
-                        </div>
-                        <h3 class="text-xl font-bold">Zona Animal</h3>
-                    </div>
-                    <p class="text-gray-300">Cuidando a tus mascotas con amor y profesionalismo.</p>
-                </div>
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Contacto</h4>
-                    <div class="space-y-2 text-gray-300">
-                        <p>📍 280 Calle 7 Ote<br>Cdad. Serdán, Puebla</p>
-                        <p>📞 2491571588</p>
-                        <p>✉️ info@zonaanimal.com</p>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Horarios</h4>
-                    <div class="space-y-2 text-gray-300">
-                        <p>Lun - Vie: 9:00 AM - 6:00 PM</p>
-                        <p>Sábados: 9:00 AM - 2:00 PM</p>
-                        <p>Emergencias 24/7</p>
-                    </div>
-                </div>
-            </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 Zona Animal. Todos los derechos reservados.</p>
-            </div>
+    <footer class="bg-gray-900 text-white pt-16 pb-8 mt-auto">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 Zona Animal. Todos los derechos reservados.</p>
         </div>
     </footer>
 
-    <!-- MODALS -->
-    <div id="cart-modal" class="modal"></div>
+    <!-- UI Elements -->
+    <div id="cart-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 cart-overlay flex justify-end" onclick="window.toggleCart()">
+        <div class="cart-sidebar w-full max-w-md bg-white h-full shadow-2xl flex flex-col" onclick="event.stopPropagation()">
+            <div class="p-5 border-b flex justify-between items-center bg-gray-50">
+                <h2 class="text-xl font-bold">Tu Carrito</h2>
+                <button onclick="window.toggleCart()" class="p-2 hover:bg-gray-200 rounded-full">✕</button>
+            </div>
+            <div id="cart-items-container" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+            <div id="cart-footer" class="p-5 border-t bg-gray-50"></div>
+        </div>
+    </div>
+
     <div id="checkout-modal" class="modal"></div>
     <div id="confirm-modal" class="modal"></div>
     <div id="edit-product-modal" class="modal"></div>
-    <div id="data-modal" class="modal"></div>
 
-    <script>
-    let products = [];
-    let cart = [];
-    let orders = [];
-    let appointments = [];
-    let currentFilter = 'todos';
-    let isAdminLoggedIn = false;
-    let confirmCallback = null;
-    let adminPassword = 'password123';
+    <!-- FIREBASE MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // --- DATA PERSISTENCE (localStorage) ---
-    function saveData() {
-        try {
-            localStorage.setItem('zonaAnimalProducts', JSON.stringify(products));
-            localStorage.setItem('zonaAnimalCart', JSON.stringify(cart));
-            localStorage.setItem('zonaAnimalOrders', JSON.stringify(orders));
-            localStorage.setItem('zonaAnimalAppointments', JSON.stringify(appointments));
-            localStorage.setItem('zonaAnimalPassword', adminPassword);
-        } catch (error) {
-            console.error('Error al guardar datos:', error);
-        }
-    }
+        // --- CONFIGURACIÓN ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-    function loadData() {
-        const savedProducts = localStorage.getItem('zonaAnimalProducts');
-        const defaultProducts = [
-            {
-                "id": 1758436222540,
-                "name": "Clean Guard Pipetas Anti Pulgas (40kg o mas)",
-                "price": 280,
-                "category": "medicamentos",
-                "image": "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQzb771J_4mqcDQQhlXsQkPSt8pBzlOT3HBjikV3JgM9E7IgFB8J0AZ3n40MbHM4r9WC9EaWWtXVDgtWVgagRq4w_oDiiwk9ZrMSKTbG8z4w2GUDQzSixMTGVao4-N4aPH-qWcunOs&usqp=CAc",
-                "description": "envio a domicilio "
-            },
-            {
-                "id": 1758436757157,
-                "name": "Laxante y Lubricante Oleo - Lax 50g oral",
-                "price": 150,
-                "category": "medicamentos",
-                "image": "https://farmanimals.com.mx/cdn/shop/products/oleo-lax_1200x1200.jpg?v=1664645416",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758436801916,
-                "name": "TOPAZONE 250 ml (Antimicrobiano Polvo Aerosol)",
-                "price": 280,
-                "category": "medicamentos",
-                "image": "https://farmanimals.com.mx/cdn/shop/products/Topazone-Polvo-Aerosol-250ml_1200x1200.jpg?v=1681325178",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758436871849,
-                "name": "FRONPet Pipetas Anti Pulgas (10,1 a 20 kg perros)",
-                "price": 250,
-                "category": "medicamentos",
-                "image": "https://www.grupolovet.com/cdn/shop/files/Frontpet10-20KG_ea4788f8-7f38-46f4-9a15-c96d52fe2252_grande.png?v=1745206547",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758436969672,
-                "name": "Guard Pipetas Anti Pulgas 0.5ml(1kg - 5kg) Gato ",
-                "price": 290,
-                "category": "medicamentos",
-                "image": "https://http2.mlstatic.com/D_NQ_NP_930039-MLA92323952773_092025-O.webp",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437057823,
-                "name": "Collar Anti Pulgas  Cachorro Para Gato (Nobleza)",
-                "price": 150,
-                "category": "medicamentos",
-                "image": "https://http2.mlstatic.com/D_NQ_NP_731996-MCO49048509877_022022-O.webp",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437119074,
-                "name": "TABLETAS IVERFULL CAJA  2 BLISTERS CON 6 TAB. 400 MG(10 KG)",
-                "price": 180,
-                "category": "medicamentos",
-                "image": "https://http2.mlstatic.com/D_NQ_NP_741351-MLM83675696007_042025-O.webp",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437177781,
-                "name": "TABLETAS IVERFULL X PIEZA (10 KG)",
-                "price": 25,
-                "category": "medicamentos",
-                "image": "https://http2.mlstatic.com/D_NQ_NP_741351-MLM83675696007_042025-O.webp",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437264604,
-                "name": "CORREA RETRACTIL 3M ",
-                "price": 190,
-                "category": "accesorios",
-                "image": "https://http2.mlstatic.com/D_NQ_NP_971721-MLM88723308602_072025-O-correa-retractil-3m-para-perro-gato-soporta-hasta-15kg-eco.webp",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437372243,
-                "name": "COLLARES DE RECUPERACION (TALLA M NEGRO TRANSPARENTE)",
-                "price": 190,
-                "category": "accesorios",
-                "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxIQEhUTEhIVFhUWFRYVFRYVFRYWFhgYFhgXFhUdFRUYHSggGh0lHhcVIzEhJSorLi8uGB8zODMuNykuLisBCgoKDg0OGxAQGi0lGyIrLS0vLS0tLTctLy8rLS0tLS0tLS01LS0tKy0vLS4tLS0tLS0tLSstKy0rLTctLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAcAAEAAgMBAQEAAAAAAAAAAAAABQYDBAcCAQj/xABLEAABAwIDBAYGBQkFBwUAAAABAAIDBBEFEiEGEzFBByJRYXGBFBUykaGxQmJygsEjM0NSkqKy0fAkVJPT4RYXNFOzwsMlRGODo//EABkBAQADAQEAAAAAAAAAAAAAAAACAwQBBf/EACYRAQACAgEDBAEFAAAAAAAAAAABAgMRBBIhMRMyUXFBFCKBkcH/2gAMAwEAAhEDEQH/AO4oiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICLHJUMb7TmjxIHzXpjwRcEEd2qD0iIgIiICIiAiIgIiICIiAvhNkc4AXOgHErgNdU1+01VNHDUsipI3WDC8gGPMQxzom9aRzrX63VF7XHMOt4tt5hlLcS1sIcOLWu3jv2Y7lV2p6acKb7Jnf8AZhI/jLVC4X0L0UYG/lmmPMAiJl+5rQXfvKwUvRthUfCjY7ve6R/8Tigjf9+mHf3es/Yg/wA5bUPTXhbva9IZ9qK/8DipT/YnDf7jTf4TP5LDNsBhb+NDD91pb/CQg3MP6TMJn0bWxtPZKHRf9QAK001SyVodG9r2ng5rg5p8CNFzSv6JMMkByRyxHtjlcfhJmCq9Z0bV+GF1RhlY45esWfm3kDXXjHLz0cB5oO8Iqx0c7UetKJk7sokBMcobwD221A5BzS11uWZWdAREQFhrKuOFjpJXtYxgu57iGtaO0k8FjxXEYqWF88zgyONpc9x5AdgGpJ4ADUkgLlFLS1G0kvpFVnhw5jjuKcEtdMQbZpCPmOHBvNxCTrOkaqrnuhwWl3oacrqqYFsLT9UG1/Mg/VIWt/sJiFX1sRxec34xU35OMX5X0B82K83gpImtAZFGwZWtaA1o7mtCj37SR2JaxxH6zrNB8Bqfgq75aU90rKYr39sK1F0PYWB1mTPPMumNz+yAF8d0SULDmp5aqnd+tFNb33aT8VPSbSOb7UQHYC83/hSPa2LNZ7HN7wQ4efA/NV/q8Pjaf6bLrekB6vx7DutTVjK+MfoaluWW3Y2Qm5NuZcPBWHY/pFp66Q08rHUtW3R1PLoSbX/JuIGbTWxAPO1tVMwVDZG5mODmngQoHbDZKDEo7PuyZusU7NJGEajXm2/0fMWOq0RO/CiY0vKKg9Hm1E5kfhuIf8ZC27JPo1EXJ7TzPb2+Ida/ICIiAiIgIiICIiDXr3AMdcA3BFjzvouB490b1lFL6RhjnuaDdrY3ZZ4x2Ak/lG8u08CDqV3HEJMzrch81jY1BxfCulyspnbqupxIRxJBgm8XMIyk+TVbaLpcw1465mhPY+Iu9xizK8V+FwVDcs8McreyRjXjyzBfnHpMw+CHE5YKSIMa3dMyNvYyPa1xsCdPbAsLDRB2P/ejhP8Aej/gVP8Alry7pTwkf+4d/gT/AIsXIj0cVvohnyu3wJPomQ78sDsuYAG5HO1ltVHRfVNdAA8PY82ne0N/s2jS7egv5Au5/R7wg6NWdL+GMYXMM0juAY2ItPiXPsAPO/cqHjW2uJY440tJCWRu0dHGbktP/PmNg1vdoDwN1E4hsw2grqYSNM1I+WECUlpjma7JvMuTgBmdpfW/O1+iaLDoqdgjhjZGw+ixoaPeCCG6L9m9WU+5c4OkkdvJXD2c5AFmX1ygNAueJudL2F2UKTY3HJS8T8wB7UHtEWCuqRFG+R3BjHPPg0En5IOY7aPdjGJMw1pIpaa01YWkjM7i1lx4geJeeLAr9DE1jWsY0Na0BrWtFgABYAAcAAqV0R0jvRH1cn52smkneTxtmc1o8Lh7h9pWnGsRFNC+U/RGg7XHRo96jNoiNy7ETM6hzLavaVr6x7XucWxOMcbWgkFzdXE24AWNz/JWLZWmdWStLvzbGhzrcL8QPkud02CvrHbtpOd0zr6A5swBJPxN/FdvwHCG0NNu2autqe027V5tMUZL9f8y9LJknHTo/r/AFR9qK9rZXm+gfl/r+Sh6iQlocBcH4eSgdsaecykakB1y3tN76g8R2jvWng7JYrutkZwyGwzEkm4aBZvHkFnthi1Zvvvvw0VyTW0U12+Vnwjax1JK5mpbpcHhrwXScCxplXHnZoRo4dhXCjJmkkeeB08/wCkiFhZ2aXzC3tTfA3P3q70fRriU7BI6WGJrhcCQvLtO+zWkHyK5rXbO4hhj85jfGDcCUAlh8Hj5g2XWNoNoo8Ppo5JG55JGN3UQIu9wAzE8g0HUk+A1JAvbYh5sD6+W9q+mC0eH9H1+vH3hWjD8dpph+TmjeRyDrHyOh+CuUThx4HkVY3E+Hl1p+I/n1dI6MtrfWbBRTHEh2eE+20DV8R+s3mRxb2HQrqi/K+ze0slBWsqGXu02e2/Wew9Zp+R7iBqv0vg2MQ1kLJ4X5mPFxzA5tI5tOoIVmO8zqnLNY0REUkEREBERAREQFjnkytJWRR2JS3IaPEoNRuputhgWJgWeMIMgX5nikNbjZf7Wese9ouBmETnPY0E8LiNrfNfojaKvFNSzzH9HDI/za0kfGy/PHRfhDKisvJ1tyzesaX5M8zXAxNv3kHTuQdKLZi31p6C71kIjF6LveMefLnLPa9m6yyYWKc5aehzx4g8+srz3FPmbd40PVtvJTfutpdtvEcc+X1maD/1PdmP0bfWBjDw3Pl+yvZwwU5ywUbXR1znes81RcU+Zo3g46W3kpuOzlcIKd0jUD46RsMELG0NOY301Q2XOZHS3DwDmN+tI46cMl9QRbs2BVwqKaCYfpIY5P2mgn5rmG0+Gxto5abdQsoIYhJQT+kAukqCHOtfN1sxdLpblzvpZ+hyu32FxAm5idJEe6zy5o8mvYPJBcJAtrDZeLfMLA9YY35XAoJxQO3xPqyutx9EqP+k5TrHXF+1Ya6mE0b43ey9jmHwcC0/NBUNgrDDaO392i95aCfjdV7pSxAgRQjgbyOPvaPdr7wt3oxqHCj9Gk/O0kstPICLey4lpA7LOAB+qV56RoWGOGRwvllDew5XAki/3QqOREzjnS/jzEZImVMw3bGPCyY2wh89m757nEZbtDmsYLcmltzpc3HABX7YvbVmIXaAQ9oBcDroeBB5hcn6TaAGvmcxuj8pdbtyhv4fNW/ojwyOKN0g9t1gbngBwGq7FYrERDlrTaZmPKttvhzRNmGmdtz48FRq8hmlyXHRoV+22c4yNtqA0aeZXM8VY5z3HsGUDszXzH3AjzXl5Ij1Z+HqYZn0oaM8gcQ1vsjn+seZ9915Bss9PEFjezrKe40ar7ieBxT23jGuAtY8CLdrSLEeCp9f0XscSyCWRsZJNuq8A8rEjMB3XK590U4LDiFTKyqcSyOIPEYJDnOcWgEt0Nhc2vwNidF+h6amZG0MjY1jRoGtAaB4ALwumtK570W7FR4a904lMs0jcgdlyNY24c7LfUk5W3Oh0FtBf9FqIiwiIgIiICIiAiIgIiICIiAiIgIiIP/Z",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437431242,
-                "name": "L. PECERA MAGNETICO",
-                "price": 290,
-                "category": "accesorios",
-                "image": "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTLJC-7tTPAYsPv2vxf8Sy3fA4dSHK3UwbifuCpR49Ih2C_OPWBO6Bw3WlbZ0nHh4C3i8ig_rAdxX8Owi-WsoitDv87yK3wFrCEAczir5Mqw7EU_bjE5tbym0cIwWGzSZ-3JuUI6g&usqp=CAc",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437645498,
-                "name": "IMPERMEABLE MASCOTA TALLA CH",
-                "price": 190,
-                "category": "accesorios",
-                "image": "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQB9TrhGrgIMOGtxS7Y1l-3pkQDhalyD8P-5PZgdeOA0B7363jDG1Z-z6GcLPRRqMFLcD9FslUALFKywIjyPajHx0PCQaMo_NGlklFRXYm0WSrALCO64xrb",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437729530,
-                "name": "CORTA UÑAS MASCOTAS",
-                "price": 200,
-                "category": "accesorios",
-                "image": "https://www.google.com/aclk?sa=L&ai=DChsSEwiqrb3zoumPAxUILtQBHXvwKboYACICCAEQAxoCb2E&co=1&ase=2&gclid=CjwKCAjwobnGBhBNEiwAu2mpFCUXR_i3cReiRnS0vxqSfNltqJ9rlE2T8g-0zf_KltiTw3ZAE0ChxxoCNdkQAvD_BwE&cid=CAASNuRowFDLjYYzt4kUosf1YoLK-HKvznopDWGh-k5WS4Z_usPQc8a9NcGSEyPL7ZI_BRQ_iGaSxw&cce=2&category=acrcp_v1_32&sig=AOD64_03Aq49q1yZiP54ffBAGhfGPWe3tw&ctype=5&q=&nis=4&ved=2ahUKEwix3bnzoumPAxUZ48kDHSscIa8Q9aACKAB6BAgKEBs&adurl=",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758437980291,
-                "name": "Rasqueta Multifunciones 5 En 1 Para Acurio P/ Vidrio",
-                "price": 300,
-                "category": "accesorios",
-                "image": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRQjSqXazpJYTphifrrV2Xw3vvEzVRQq7_-L3yfOADRtBMzHkJun1o2IoTwo4m4W6_pcvWwshC4_wzIWq3_Mbkj7c1DuNC-PDSXDLuVSMSQtPHoleTBLzUG",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438037232,
-                "name": "BERICAN ADULTO(BULTO 25 KG)",
-                "price": 590,
-                "category": "alimento",
-                "image": "data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438084555,
-                "name": "BERICAN ADULTO (PROMOCION 2 KG)",
-                "price": 50,
-                "category": "alimento",
-                "image": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcTf6B47Ess9ykdr4UHyVY11izJmoEwxTEKoPvte4__bBd1nMm7Z-AmsgL4szZcoHovCBn9E1jDTuuWwrVExLhDYQYY2S_U9BHKgcjB9wZPA9eREh6CmTmX_eA",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438178632,
-                "name": "BERICAN ADULTO(POR KILO)",
-                "price": 27,
-                "category": "alimento",
-                "image": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcTf6B47Ess9ykdr4UHyVY11izJmoEwxTEKoPvte4__bBd1nMm7Z-AmsgL4szZcoHovCBn9E1jDTuuWwrVExLhDYQYY2S_U9BHKgcjB9wZPA9eREh6CmTmX_eA",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438251467,
-                "name": "CAN PRO ADULTO (20 KG)",
-                "price": 300,
-                "category": "alimento",
-                "image": "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcRYn0zoaWkaDltVP6mbhBUPiB1XwYXEGNS7ylRA67dFEj7UjFG51gCTx3N5QxmydbwGpWsfySOb1T01OvGYxqGFaAGtak4CNoYxR2T4e9Vrbk1pZApToBJXMAg",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438276407,
-                "name": "CAN PRO ADULTO (POR KILO)",
-                "price": 16,
-                "category": "alimento",
-                "image": "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcRYn0zoaWkaDltVP6mbhBUPiB1XwYXEGNS7ylRA67dFEj7UjFG51gCTx3N5QxmydbwGpWsfySOb1T01OvGYxqGFaAGtak4CNoYxR2T4e9Vrbk1pZApToBJXMAg",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438325700,
-                "name": "DASNER ADULTO (20 KG)",
-                "price": 300,
-                "category": "alimento",
-                "image": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQAT2PvsNeVpzBrW9iH7AyEr1lxHtXt77gU6VLKw8p7gqBcbnxFNvYuFENjRs7UgMi672GmFc6fZ4rwqm2hb0vFUtn0tatd5r-OI0VXwwRGYL4yvGoeHYwMMg",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438342716,
-                "name": "DASNER ADULTO POR (1 KG)",
-                "price": 20,
-                "category": "alimento",
-                "image": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQAT2PvsNeVpzBrW9iH7AyEr1lxHtXt77gU6VLKw8p7gqBcbnxFNvYuFENjRs7UgMi672GmFc6fZ4rwqm2hb0vFUtn0tatd5r-OI0VXwwRGYL4yvGoeHYwMMg",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438427993,
-                "name": "BERISCAT (15 KG)",
-                "price": 530,
-                "category": "alimento",
-                "image": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.distribuidoraeltio.com.mx%2Fproducts%2Fberiscan-pro-adulto-25-kg-copia%3Fsrsltid%3DAfmBOora9szbZ-o2Amlox5IE6ExxFnZGK6q01908k7r3kwVvwdSBa796&psig=AOvVaw34g8JnX8vW69BrF78QvGKl&ust=1758524791995000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCLiXxMGl6Y8DFQAAAAAdAAAAABAE",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438478540,
-                "name": "BERISCAT POR (1 KG)",
-                "price": 39,
-                "category": "alimento",
-                "image": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.distribuidoraeltio.com.mx%2Fproducts%2Fberiscan-pro-adulto-25-kg-copia%3Fsrsltid%3DAfmBOora9szbZ-o2Amlox5IE6ExxFnZGK6q01908k7r3kwVvwdSBa796&psig=AOvVaw34g8JnX8vW69BrF78QvGKl&ust=1758524791995000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCLiXxMGl6Y8DFQAAAAAdAAAAABAE",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438601359,
-                "name": "NUCAT (15 KG)",
-                "price": 570,
-                "category": "alimento",
-                "image": "https://shaly.co/wp-content/uploads/2024/08/nucart.webp",
-                "description": "envio a domicilio"
-            },
-            {
-                "id": 1758438656196,
-                "name": "NUCAT X KILO",
-                "price": 29,
-                "category": "alimento",
-                "image": "https://shaly.co/wp-content/uploads/2024/08/nucart.webp",
-                "description": "envio a domicilio"
+        // State
+        let products = [];
+        let cart = JSON.parse(localStorage.getItem('zonaAnimalCart')) || [];
+        let orders = [];
+        let appointments = [];
+        let currentFilter = 'todos';
+        let isAdminLoggedIn = localStorage.getItem('isAdmin') === 'true';
+        let confirmCallback = null;
+        
+        // --- AUTH & INIT ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                console.log("Conectado a la nube ☁️");
+            } catch (error) {
+                console.error("Auth Error:", error);
+                showNotification("Error de conexión", "error");
             }
-        ];
-        products = savedProducts ? JSON.parse(savedProducts) : defaultProducts;
-        cart = JSON.parse(localStorage.getItem('zonaAnimalCart')) || [];
-        orders = JSON.parse(localStorage.getItem('zonaAnimalOrders')) || [];
-        appointments = JSON.parse(localStorage.getItem('zonaAnimalAppointments')) || [];
-        
-        const savedPassword = localStorage.getItem('zonaAnimalPassword');
-        adminPassword = savedPassword || 'password123';
-    }
-    
-    // --- INITIALIZATION ---
-    document.addEventListener('DOMContentLoaded', () => {
-        loadData();
-        renderAll();
-        const dateInput = document.getElementById('appointment-date');
-        if (dateInput) {
-            dateInput.min = new Date().toISOString().split('T')[0];
-        }
-    });
+        };
 
-    // --- MAIN RENDER FUNCTION ---
-    function renderAll() {
-        renderProducts();
-        renderCart();
-        renderAdminPanel();
-    }
+        // Start Auth First
+        initAuth();
 
-    // --- UI & RENDERING FUNCTIONS ---
-    function filterProducts(category, buttonElement) {
-        currentFilter = category;
-        renderProducts();
-        
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('bg-gray-200', 'text-gray-700');
+        // Only Setup Listeners When Auth is Confirmed
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setupListeners();
+            }
         });
-        buttonElement.classList.remove('bg-gray-200', 'text-gray-700');
-        buttonElement.classList.add('bg-blue-600', 'text-white');
-    }
 
-    function renderProducts() {
-        const grid = document.getElementById('products-grid');
-        if (!grid) return;
-        const filtered = currentFilter === 'todos' ? products : products.filter(p => p.category === currentFilter);
-        grid.innerHTML = filtered.length ? filtered.map(product => `
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
-                <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold mb-2">${product.name}</h3>
-                    <p class="text-gray-600 text-sm mb-4 h-10">${product.description}</p>
-                    <div class="flex items-center justify-between mt-4">
-                        <span class="text-2xl font-bold text-blue-600">$${product.price}</span>
-                        <button onclick="addToCart(${product.id})" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Agregar</button>
+        // --- FIRESTORE LISTENERS (REAL-TIME) ---
+        const setupListeners = () => {
+            // Using simple collection refs without complex queries to avoid index errors
+            const productsRef = collection(db, 'artifacts', appId, 'public', 'data', 'products');
+            const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+            const apptsRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+
+            // Escuchar Productos
+            onSnapshot(productsRef, (snapshot) => {
+                products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                window.renderProducts(); // Renderizar al recibir datos
+                if(isAdminLoggedIn) window.renderAdminProducts();
+                
+                // Remove loader safely
+                const loader = document.getElementById('loader');
+                if(loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.remove(), 500);
+                }
+                
+                // Seed if empty (Solo para demo)
+                if (products.length === 0 && !localStorage.getItem('seeded')) {
+                    seedData();
+                }
+            }, (error) => console.error("Error productos:", error));
+
+            // Escuchar Pedidos
+            onSnapshot(ordersRef, (snapshot) => {
+                orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if(isAdminLoggedIn) window.renderAdminOrders();
+            }, (error) => console.error("Error pedidos:", error));
+
+            // Escuchar Citas
+            onSnapshot(apptsRef, (snapshot) => {
+                appointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if(isAdminLoggedIn) window.renderAdminAppointments();
+            }, (error) => console.error("Error citas:", error));
+        };
+
+        // --- DATA OPERATIONS ---
+        window.addProductToDB = async (productData) => {
+            try {
+                if(!auth.currentUser) return;
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), productData);
+                window.showNotification("Producto guardado en la nube", "success");
+            } catch (e) { console.error(e); window.showNotification("Error al guardar", "error"); }
+        };
+
+        window.updateProductInDB = async (id, data) => {
+            try {
+                if(!auth.currentUser) return;
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id), data);
+                window.showNotification("Producto actualizado", "success");
+            } catch (e) { window.showNotification("Error al actualizar", "error"); }
+        };
+
+        window.deleteProductFromDB = async (id) => {
+            try {
+                if(!auth.currentUser) return;
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
+                window.showNotification("Producto eliminado", "info");
+            } catch (e) { window.showNotification("Error al eliminar", "error"); }
+        };
+
+        window.addOrderToDB = async (orderData) => {
+             if(!auth.currentUser) return;
+             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), orderData);
+        };
+
+        window.addAppointmentToDB = async (apptData) => {
+             if(!auth.currentUser) return;
+             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'appointments'), apptData);
+        };
+        
+        window.updateOrderInDB = async (id, status) => {
+            if(!auth.currentUser) return;
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status });
+        };
+
+        window.deleteOrderFromDB = async (id) => {
+            if(!auth.currentUser) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id));
+        };
+
+        window.deleteAppointmentFromDB = async (id) => {
+            if(!auth.currentUser) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appointments', id));
+        };
+
+        // --- UTILS EXPOSED TO WINDOW ---
+        
+        // Products
+        window.renderProducts = () => {
+            const grid = document.getElementById('products-grid');
+            const searchTerm = document.getElementById('search-product')?.value.toLowerCase() || '';
+            let filtered = currentFilter === 'todos' ? products : products.filter(p => p.category === currentFilter);
+            if (searchTerm) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
+
+            grid.innerHTML = filtered.length ? filtered.map(product => `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden card-hover flex flex-col h-full">
+                    <div class="relative pt-[75%] bg-gray-100">
+                        <img src="${product.image}" onerror="this.src='https://placehold.co/400x300?text=Sin+Imagen'" class="absolute top-0 left-0 w-full h-full object-cover">
+                        <span class="absolute top-3 right-3 bg-white/90 px-2 py-1 rounded-lg text-xs font-bold text-indigo-600 uppercase shadow-sm">${product.category}</span>
                     </div>
-                </div>
-            </div>`).join('') : '<p class="col-span-full text-center text-gray-500">No hay productos en esta categoría.</p>';
-    }
-
-    function renderCart() {
-        const cartModal = document.getElementById('cart-modal');
-        const cartCount = document.getElementById('cart-count');
-        if (!cartModal || !cartCount) return;
-
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        cartCount.textContent = totalItems;
-
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
-        if (cart.length === 0) {
-            cartModal.innerHTML = `
-            <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">Carrito de Compras</h3>
-                    <button onclick="toggleCart()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-                </div>
-                <p class="text-gray-500 text-center py-8">Tu carrito está vacío</p>
-            </div>`;
-        } else {
-            cartModal.innerHTML = `
-            <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">Carrito de Compras</h3>
-                    <button onclick="toggleCart()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-                </div>
-                <div class="flex-grow overflow-y-auto space-y-3 mb-4 pr-2">
-                    ${cart.map(item => `
-                        <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                            <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-lg object-cover">
-                            <div class="flex-grow mx-3">
-                                <p class="font-medium text-sm">${item.name}</p>
-                                <p class="text-gray-600 text-xs">$${item.price} x ${item.quantity}</p>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="updateQuantity(${item.id}, -1)" class="w-6 h-6 bg-gray-200 rounded-full">-</button>
-                                <span>${item.quantity}</span>
-                                <button onclick="updateQuantity(${item.id}, 1)" class="w-6 h-6 bg-blue-500 text-white rounded-full">+</button>
-                            </div>
-                        </div>`).join('')}
-                </div>
-                <div class="border-t pt-4">
-                    <div class="flex justify-between font-semibold mb-4">
-                        <span>Subtotal:</span>
-                        <span>$${subtotal.toFixed(2)}</span>
-                    </div>
-                    <button onclick="showCheckoutForm()" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700">Proceder al Pago</button>
-                </div>
-            </div>`;
-        }
-    }
-    
-    // --- CART LOGIC ---
-    function addToCart(productId) {
-        const product = products.find(p => p.id === productId);
-        const existingItem = cart.find(item => item.id === productId);
-        if (existingItem) {
-            existingItem.quantity++;
-        } else {
-            cart.push({ ...product, quantity: 1 });
-        }
-        showNotification(`"${product.name}" agregado al carrito`, 'success');
-        saveData();
-        renderCart();
-    }
-
-    function updateQuantity(productId, change) {
-        const item = cart.find(item => item.id === productId);
-        if (item) {
-            item.quantity += change;
-            if (item.quantity <= 0) {
-                cart = cart.filter(i => i.id !== productId);
-            }
-        }
-        saveData();
-        renderCart();
-    }
-
-    function toggleCart() {
-        document.getElementById('cart-modal').classList.toggle('show');
-    }
-    
-    // --- CHECKOUT LOGIC ---
-    function showCheckoutForm() {
-        if (cart.length === 0) {
-            showNotification('Tu carrito está vacío', 'warning');
-            return;
-        }
-        const modal = document.getElementById('checkout-modal');
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        modal.innerHTML = `
-        <div class="bg-white rounded-xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold">Finalizar Compra</h3>
-                <button onclick="closeCheckout()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-            </div>
-            <form id="checkout-form" class="space-y-4">
-                <input type="text" id="checkout-name" placeholder="Nombre completo" required class="w-full px-3 py-2 border rounded-lg">
-                <input type="tel" id="checkout-phone" placeholder="Teléfono" required class="w-full px-3 py-2 border rounded-lg">
-                <textarea id="checkout-address" rows="2" placeholder="Dirección de entrega" required class="w-full px-3 py-2 border rounded-lg"></textarea>
-                <div class="border-t pt-4 mt-4">
-                    <h4 class="font-semibold mb-2">Resumen: $${subtotal.toFixed(2)}</h4>
-                    <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Enviar Pedido por WhatsApp</button>
-                </div>
-            </form>
-        </div>`;
-        modal.classList.add('show');
-        document.getElementById('checkout-form').addEventListener('submit', handleCheckoutSubmit);
-    }
-    
-    function closeCheckout() { document.getElementById('checkout-modal').classList.remove('show'); }
-
-    function handleCheckoutSubmit(e) {
-        e.preventDefault();
-        const customerName = document.getElementById('checkout-name').value;
-        const customerPhone = document.getElementById('checkout-phone').value;
-        const customerAddress = document.getElementById('checkout-address').value;
-
-        let orderSummary = `*¡Nuevo Pedido en Zona Animal!* 🐾\n\n`;
-        orderSummary += `*Cliente:* ${customerName}\n`;
-        orderSummary += `*Teléfono:* ${customerPhone}\n`;
-        orderSummary += `*Dirección de Entrega:*\n${customerAddress}\n\n`;
-        orderSummary += `*Productos:*\n`;
-        cart.forEach(item => {
-            orderSummary += `- ${item.quantity}x ${item.name} ($${(item.price * item.quantity).toFixed(2)})\n`;
-        });
-        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        orderSummary += `\n*Total del Pedido: $${total.toFixed(2)}*`;
-
-        const whatsappNumber = '5212452070033';
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(orderSummary)}`;
-        window.open(whatsappUrl, '_blank');
-
-        const orderNumber = 'VET' + String(Date.now()).slice(-4);
-        const newOrder = {
-            id: orderNumber,
-            status: 'confirmado',
-            items: [...cart],
-            total: total,
-            address: customerAddress,
-            phone: customerPhone,
-            lastUpdate: ''
-        };
-        orders.unshift(newOrder);
-        cart = [];
-        saveData();
-        closeCheckout();
-        showNotification(`Redirigiendo a WhatsApp para confirmar el pedido #${orderNumber}.`, 'info');
-        renderAll();
-    }
-
-    // --- ORDER TRACKING ---
-    function searchOrder() {
-        const orderId = document.getElementById('order-search').value.trim().toUpperCase();
-        const order = orders.find(o => o.id === orderId);
-        const resultDiv = document.getElementById('order-result');
-        if (order) {
-            const statusConfig = {
-                confirmado: { text: 'Confirmado', class: 'bg-blue-100 text-blue-800' },
-                preparando: { text: 'Preparando', class: 'bg-yellow-100 text-yellow-800' },
-                'en-camino': { text: 'En Camino', class: 'bg-orange-100 text-orange-800' },
-                entregado: { text: 'Entregado', class: 'bg-green-100 text-green-800' }
-            };
-            resultDiv.innerHTML = `
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold">Pedido #${order.id}</h3>
-                    <span class="px-3 py-1 rounded-full text-sm ${statusConfig[order.status].class}">${statusConfig[order.status].text}</span>
-                </div>
-                <div class="border-t pt-4">
-                    <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
-                    <p><strong>Dirección:</strong> ${order.address}</p>
-                    ${order.lastUpdate ? `<p class="mt-2 p-2 bg-blue-50 rounded-lg text-blue-800"><strong>Última Actualización:</strong> ${order.lastUpdate}</p>` : ''}
-                </div>
-                <div class="border-t pt-4 mt-4">
-                    <button onclick="sendTrackingByWhatsapp('${order.id}')" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700">
-                        Compartir Seguimiento por WhatsApp
-                    </button>
-                </div>`;
-            resultDiv.classList.remove('hidden');
-        } else {
-            showNotification('Pedido no encontrado.', 'error');
-            resultDiv.classList.add('hidden');
-        }
-    }
-
-    function sendTrackingByWhatsapp(orderId) {
-        const order = orders.find(o => o.id === orderId);
-        if (!order) {
-            showNotification('No se pudo encontrar el pedido para compartir.', 'error');
-            return;
-        }
-
-        const statusConfig = {
-            confirmado: { text: 'Confirmado' },
-            preparando: { text: 'Preparando' },
-            'en-camino': { text: 'En Camino' },
-            entregado: { text: 'Entregado' }
-        };
-
-        let trackingMessage = `*Seguimiento de mi Pedido - Zona Animal* 🐾\n\n`;
-        trackingMessage += `*Número de Pedido:* ${order.id}\n`;
-        trackingMessage += `*Estado:* ${statusConfig[order.status].text}\n`;
-        if (order.lastUpdate) {
-            trackingMessage += `*Última Actualización:* ${order.lastUpdate}\n`;
-        }
-        trackingMessage += `*Total:* $${order.total.toFixed(2)}\n\n`;
-        trackingMessage += `¡Gracias por tu compra!`;
-
-        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(trackingMessage)}`;
-        window.open(whatsappUrl, '_blank');
-    }
-    
-    // --- APPOINTMENT LOGIC ---
-    function handleReasonChange() {
-        const reasonSelect = document.getElementById('appointment-reason');
-        const addressContainer = document.getElementById('address-container');
-        const addressTextarea = document.getElementById('appointment-address');
-        
-        if (reasonSelect.value.includes('Domicilio')) {
-            addressContainer.classList.remove('hidden');
-            addressTextarea.required = true;
-        } else {
-            addressContainer.classList.add('hidden');
-            addressTextarea.required = false;
-        }
-    }
-
-    document.getElementById('appointment-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const newAppointment = {
-            id: Date.now(),
-            ownerName: document.getElementById('owner-name').value,
-            ownerPhone: document.getElementById('owner-phone').value,
-            petName: document.getElementById('pet-name').value,
-            petType: document.getElementById('pet-type').value,
-            petBreed: document.getElementById('pet-breed').value,
-            reason: document.getElementById('appointment-reason').value,
-            date: document.getElementById('appointment-date').value,
-            time: document.getElementById('appointment-time').value,
-            address: document.getElementById('appointment-address').value
-        };
-
-        let appointmentSummary = `*¡Nueva Cita Agendada en Zona Animal!* 🗓️\n\n`;
-        appointmentSummary += `*Cliente:* ${newAppointment.ownerName}\n`;
-        appointmentSummary += `*Teléfono:* ${newAppointment.ownerPhone}\n\n`;
-        appointmentSummary += `*Mascota:* ${newAppointment.petName}\n`;
-        appointmentSummary += `*Tipo:* ${newAppointment.petType}\n`;
-        appointmentSummary += `*Raza:* ${newAppointment.petBreed}\n\n`;
-        appointmentSummary += `*Motivo:* ${newAppointment.reason}\n`;
-        appointmentSummary += `*Fecha:* ${newAppointment.date}\n`;
-        appointmentSummary += `*Hora:* ${newAppointment.time}\n`;
-        if (newAppointment.reason.includes('Domicilio')) {
-            appointmentSummary += `*Dirección:* ${newAppointment.address}\n`;
-        }
-
-        const whatsappNumber = '5212452070033';
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(appointmentSummary)}`;
-        window.open(whatsappUrl, '_blank');
-
-        appointments.push(newAppointment);
-        saveData();
-        showNotification('Redirigiendo a WhatsApp para agendar tu cita.', 'info');
-        this.reset();
-        handleReasonChange();
-        renderAdminAppointments();
-    });
-
-    // --- ADMIN LOGIC ---
-    document.getElementById('admin-login-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const user = document.getElementById('admin-username').value;
-        const pass = document.getElementById('admin-password').value;
-        if (user === 'admin' && pass === adminPassword) {
-            isAdminLoggedIn = true;
-            document.getElementById('admin-login').classList.add('hidden');
-            document.getElementById('admin-panel').classList.remove('hidden');
-        } else {
-            showNotification('Credenciales incorrectas.', 'error');
-        }
-    });
-
-    function logoutAdmin() {
-        showConfirm('Cerrar Sesión', '¿Estás seguro?', confirmed => {
-            if (confirmed) {
-                isAdminLoggedIn = false;
-                document.getElementById('admin-login').classList.remove('hidden');
-                document.getElementById('admin-panel').classList.add('hidden');
-            }
-        });
-    }
-
-    function showAdminTab(tab, btn) {
-        document.querySelectorAll('.admin-content').forEach(el => el.classList.add('hidden'));
-        document.getElementById(`admin-${tab}`).classList.remove('hidden');
-        document.querySelectorAll('.admin-tab').forEach(b => {
-            b.classList.remove('bg-blue-600', 'text-white');
-            b.classList.add('bg-gray-200', 'text-gray-700');
-        });
-        btn.classList.add('bg-blue-600', 'text-white');
-        btn.classList.remove('bg-gray-200', 'text-gray-700');
-    }
-
-    function renderAdminPanel() {
-        renderAdminProducts();
-        renderAdminOrders();
-        renderAdminAppointments();
-        renderAdminSecurity();
-    }
-
-    // Admin Products
-    function renderAdminProducts() {
-        const container = document.getElementById('admin-productos');
-        if(!container) return;
-        container.innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-xl shadow-lg border">
-                <h3 class="text-xl font-bold mb-6">Agregar Producto</h3>
-                <form id="add-product-form" class="space-y-4">
-                    <input type="text" id="product-name" placeholder="Nombre" required class="w-full p-2 border rounded">
-                    <input type="number" id="product-price" placeholder="Precio" min="0" step="0.01" required class="w-full p-2 border rounded">
-                    <select id="product-category" required class="w-full p-2 border rounded">
-                        <option value="alimento">Alimento</option><option value="juguetes">Juguetes</option><option value="medicamentos">Medicamentos</option><option value="accesorios">Accesorios</option>
-                    </select>
-                    <input type="text" id="product-image" placeholder="URL de imagen" required class="w-full p-2 border rounded">
-                    <textarea id="product-description" placeholder="Descripción" required class="w-full p-2 border rounded"></textarea>
-                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg">Agregar Producto</button>
-                </form>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-lg border">
-                <h3 class="text-xl font-bold mb-6">Productos Existentes</h3>
-                <div id="admin-products-list" class="space-y-3 max-h-96 overflow-y-auto">${products.map(p => `
-                    <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                        <span>${p.name}</span>
-                        <div>
-                            <button onclick="showEditProductModal(${p.id})" class="text-blue-500 text-sm">Editar</button>
-                            <button onclick="deleteProduct(${p.id})" class="text-red-500 text-sm ml-2">Eliminar</button>
+                    <div class="p-5 flex flex-col flex-grow">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">${product.name}</h3>
+                        <p class="text-gray-500 text-sm mb-4 line-clamp-2 flex-grow">${product.description}</p>
+                        <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
+                            <span class="text-2xl font-extrabold text-indigo-600">$${product.price}</span>
+                            <button onclick="window.addToCart('${product.id}')" class="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-indigo-600 hover:scale-110 transition-all shadow-lg"><span class="text-lg">+</span></button>
                         </div>
+                    </div>
+                </div>`).join('') : '<div class="col-span-full py-12 text-center text-gray-400"><p>No hay productos.</p></div>';
+        };
+
+        window.filterProducts = (cat, btn) => {
+            currentFilter = cat;
+            document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('bg-indigo-600', 'text-white'); b.classList.add('bg-white', 'text-gray-600'); });
+            btn.classList.remove('bg-white', 'text-gray-600'); btn.classList.add('bg-indigo-600', 'text-white');
+            window.renderProducts();
+        };
+        
+        window.searchProducts = () => window.renderProducts();
+
+        // Cart (Local Only)
+        window.toggleCart = () => document.body.classList.toggle('cart-open');
+        
+        window.addToCart = (id) => {
+            const prod = products.find(p => p.id === id);
+            const item = cart.find(i => i.id === id);
+            if(item) item.quantity++; else cart.push({...prod, quantity: 1});
+            saveCart(); window.renderCart(); window.showNotification("Agregado al carrito", "success");
+        };
+
+        window.removeFromCart = (id) => { cart = cart.filter(i => i.id !== id); saveCart(); window.renderCart(); };
+        window.updateQuantity = (id, chg) => {
+            const item = cart.find(i => i.id === id);
+            if(item) { item.quantity += chg; if(item.quantity <= 0) window.removeFromCart(id); else { saveCart(); window.renderCart(); } }
+        };
+        
+        function saveCart() { localStorage.setItem('zonaAnimalCart', JSON.stringify(cart)); }
+
+        window.renderCart = () => {
+            const container = document.getElementById('cart-items-container');
+            const footer = document.getElementById('cart-footer');
+            document.getElementById('cart-count').textContent = cart.reduce((s, i) => s + i.quantity, 0);
+            
+            if(cart.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10">Carrito vacío</div>';
+                footer.innerHTML = '';
+            } else {
+                container.innerHTML = cart.map(i => `
+                    <div class="flex gap-3 items-center bg-gray-50 p-2 rounded-lg">
+                        <img src="${i.image}" class="w-12 h-12 rounded object-cover">
+                        <div class="flex-1"><div class="font-bold text-sm">${i.name}</div><div class="text-xs text-indigo-600">$${i.price} x ${i.quantity}</div></div>
+                        <div class="flex items-center gap-2"><button onclick="window.updateQuantity('${i.id}', -1)" class="w-6 h-6 bg-gray-200 rounded">-</button><span>${i.quantity}</span><button onclick="window.updateQuantity('${i.id}', 1)" class="w-6 h-6 bg-gray-200 rounded">+</button></div>
+                    </div>`).join('');
+                const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+                footer.innerHTML = `<div class="flex justify-between font-bold mb-3"><span>Total</span><span>$${total.toFixed(2)}</span></div><button onclick="window.showCheckoutForm()" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold">Pagar</button>`;
+            }
+        };
+
+        // Admin Logic
+        window.renderAdminPanel = () => {
+            if(!isAdminLoggedIn) { document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('admin-panel').classList.add('hidden'); return; }
+            document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-panel').classList.remove('hidden');
+            window.renderAdminProducts();
+        };
+
+        window.renderAdminProducts = () => {
+            document.getElementById('admin-productos').innerHTML = `
+            <div class="grid lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 bg-gray-50 p-4 rounded-xl h-fit sticky top-4">
+                    <h4 class="font-bold mb-3">Nuevo Producto</h4>
+                    <form id="add-prod-form" class="space-y-3">
+                        <input id="np-name" placeholder="Nombre" class="w-full p-2 border rounded" required>
+                        <input id="np-price" type="number" placeholder="Precio" class="w-full p-2 border rounded" required>
+                        <select id="np-cat" class="w-full p-2 border rounded"><option value="alimento">Alimento</option><option value="juguetes">Juguetes</option><option value="medicamentos">Medicamentos</option><option value="accesorios">Accesorios</option></select>
+                        <input type="file" id="np-file" accept="image/*" class="w-full text-sm">
+                        <textarea id="np-desc" placeholder="Descripción" class="w-full p-2 border rounded"></textarea>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Guardar en Nube</button>
+                    </form>
+                </div>
+                <div class="lg:col-span-2 space-y-2">
+                    ${products.map(p => `<div class="flex justify-between items-center bg-white p-3 rounded border shadow-sm">
+                        <div class="flex gap-3 items-center"><img src="${p.image}" class="w-10 h-10 rounded object-cover"><div><div class="font-bold">${p.name}</div><div class="text-xs">$${p.price}</div></div></div>
+                        <div class="flex gap-2"><button onclick="window.editProduct('${p.id}')" class="text-blue-500">✏️</button><button onclick="window.deleteProductFromDB('${p.id}')" class="text-red-500">🗑️</button></div>
                     </div>`).join('')}
                 </div>
-            </div>
-        </div>`;
-        document.getElementById('add-product-form').addEventListener('submit', handleAddProduct);
-    }
-    
-    function handleAddProduct(e) {
-        e.preventDefault();
-        const newProduct = {
-            id: Date.now(),
-            name: document.getElementById('product-name').value,
-            price: parseFloat(document.getElementById('product-price').value),
-            category: document.getElementById('product-category').value,
-            image: document.getElementById('product-image').value,
-            description: document.getElementById('product-description').value,
-        };
-        products.push(newProduct);
-        saveData();
-        renderAll();
-        e.target.reset();
-        showNotification('Producto agregado.', 'success');
-    }
-
-    function deleteProduct(productId) {
-        showConfirm('Eliminar Producto', '¿Estás seguro?', confirmed => {
-            if (confirmed) {
-                products = products.filter(p => p.id !== productId);
-                saveData();
-                renderAll();
-            }
-        });
-    }
-
-    function showEditProductModal(productId) {
-        const product = products.find(p => p.id === productId);
-        if (!product) return;
-        const modal = document.getElementById('edit-product-modal');
-        modal.innerHTML = `
-        <div class="bg-white rounded-xl p-6 max-w-lg w-full mx-4">
-            <h3 class="text-xl font-bold mb-4">Editar Producto</h3>
-            <form id="edit-product-form" class="space-y-4">
-                <input type="hidden" id="edit-id" value="${product.id}">
-                <input type="text" id="edit-name" value="${product.name}" class="w-full p-2 border rounded">
-                <input type="number" id="edit-price" value="${product.price}" class="w-full p-2 border rounded">
-                <textarea id="edit-description" class="w-full p-2 border rounded">${product.description}</textarea>
-                <div class="flex justify-end gap-4">
-                    <button type="button" onclick="closeEditProductModal()" class="bg-gray-200 px-4 py-2 rounded">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Guardar</button>
-                </div>
-            </form>
-        </div>`;
-        modal.classList.add('show');
-        document.getElementById('edit-product-form').addEventListener('submit', handleEditProduct);
-    }
-
-    function closeEditProductModal() { document.getElementById('edit-product-modal').classList.remove('show'); }
-
-    function handleEditProduct(e) {
-        e.preventDefault();
-        const id = parseInt(document.getElementById('edit-id').value);
-        const index = products.findIndex(p => p.id === id);
-        if (index > -1) {
-            products[index].name = document.getElementById('edit-name').value;
-            products[index].price = parseFloat(document.getElementById('edit-price').value);
-            products[index].description = document.getElementById('edit-description').value;
-            saveData();
-            renderAll();
-            closeEditProductModal();
-            showNotification('Producto actualizado.', 'success');
-        }
-    }
-    
-    // Admin Orders
-    function renderAdminOrders() {
-        const container = document.getElementById('admin-envios');
-        if (!container) return;
-        container.innerHTML = `
-        <div class="bg-white p-6 rounded-xl shadow-lg border">
-            <h3 class="text-xl font-bold mb-6">Gestión de Envíos</h3>
-            <div class="space-y-4">${orders.map(order => `
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p><strong>ID:</strong> ${order.id} | <strong>Cliente:</strong> ${order.phone}</p>
-                            <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
-                            ${order.lastUpdate ? `<p class="text-sm text-blue-600"><strong>Última act:</strong> ${order.lastUpdate}</p>` : ''}
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <select onchange="updateOrderStatus('${order.id}', this.value)" class="p-1 border rounded text-sm">
-                                <option value="confirmado" ${order.status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
-                                <option value="preparando" ${order.status === 'preparando' ? 'selected' : ''}>Preparando</option>
-                                <option value="en-camino" ${order.status === 'en-camino' ? 'selected' : ''}>En Camino</option>
-                                <option value="entregado" ${order.status === 'entregado' ? 'selected' : ''}>Entregado</option>
-                            </select>
-                            <button onclick="deleteOrder('${order.id}')" class="text-red-500 font-bold text-xl">&times;</button>
-                        </div>
-                    </div>
-                    ${order.status === 'en-camino' ? `
-                    <div class="mt-4 flex flex-col sm:flex-row gap-2">
-                        <input type="text" id="update-${order.id}" class="w-full p-2 border rounded" placeholder="Ej: El repartidor está en la calle principal">
-                        <div class="flex gap-2 flex-wrap">
-                             <button onclick="sendDeliveryUpdate('${order.id}')" class="flex-grow bg-blue-500 text-white px-3 py-2 rounded-lg text-sm">Enviar Nota</button>
-                             <button onclick="sendCurrentLocation('${order.id}')" class="flex-grow bg-gray-500 text-white px-3 py-2 rounded-lg text-sm" title="Enviar un punto fijo en el mapa">📍 Ubicación</button>
-                             <button onclick="sendLiveLocation('${order.id}')" class="flex-grow bg-green-600 text-white px-3 py-2 rounded-lg text-sm" title="Simular un enlace de seguimiento por 15 minutos">📡 En vivo</button>
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>`).join('') || '<p class="text-center text-gray-500">No hay pedidos para mostrar.</p>'}
-            </div>
-        </div>`;
-    }
-
-    function deleteOrder(orderId) {
-        showConfirm('Eliminar Pedido', `¿Estás seguro de que quieres eliminar el pedido #${orderId}? Esta acción no se puede deshacer.`, confirmed => {
-            if (confirmed) {
-                orders = orders.filter(o => o.id !== orderId);
-                saveData();
-                renderAdminOrders();
-                showNotification(`Pedido #${orderId} eliminado.`, 'info');
-            }
-        });
-    }
-
-    function sendLiveLocation(orderId) {
-        const order = orders.find(o => o.id === orderId);
-        if (!order) return;
-
-        if (!navigator.geolocation) {
-            showNotification('Geolocalización no es soportada por tu navegador.', 'error');
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                
-                let locationMessage = `¡Tu pedido #${order.id} de Zona Animal está en camino! 🚚\n\n`;
-                locationMessage += `El repartidor ha compartido su ubicación en tiempo real. Este enlace será válido por los próximos 15 minutos.\n\n`;
-                locationMessage += `Sigue el progreso aquí:\n${mapsLink}`;
-
-                const customerPhone = order.phone.replace(/\D/g, '');
-                const whatsappUrl = `https://wa.me/521${customerPhone}?text=${encodeURIComponent(locationMessage)}`;
-                window.open(whatsappUrl, '_blank');
-                showNotification('Enlace de ubicación en vivo enviado.', 'success');
-            },
-            () => {
-                showNotification('No se pudo obtener la ubicación. Asegúrate de tener el GPS activado y dar los permisos necesarios.', 'error');
-            }
-        );
-    }
-
-    function sendCurrentLocation(orderId) {
-        const order = orders.find(o => o.id === orderId);
-        if (!order) return;
-
-        if (!navigator.geolocation) {
-            showNotification('Geolocalización no es soportada por tu navegador.', 'error');
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                
-                let locationMessage = `¡Hola! El repartidor de tu pedido #${order.id} de Zona Animal está en esta ubicación:\n\n${mapsLink}`;
-
-                const customerPhone = order.phone.replace(/\D/g, '');
-                const whatsappUrl = `https://wa.me/521${customerPhone}?text=${encodeURIComponent(locationMessage)}`;
-                window.open(whatsappUrl, '_blank');
-                showNotification('Enlace de ubicación enviado al cliente.', 'success');
-            },
-            () => {
-                showNotification('No se pudo obtener la ubicación. Asegúrate de tener el GPS activado y dar los permisos necesarios.', 'error');
-            }
-        );
-    }
-
-    function sendDeliveryUpdate(orderId) {
-        const order = orders.find(o => o.id === orderId);
-        const updateText = document.getElementById(`update-${orderId}`).value;
-
-        if (!order || !updateText) {
-            showNotification('Escribe un mensaje de actualización.', 'error');
-            return;
-        }
-
-        order.lastUpdate = updateText;
-        saveData();
-        renderAdminOrders();
-
-        let updateMessage = `¡Actualización de tu pedido #${order.id} de Zona Animal! 📍\n\n`;
-        updateMessage += `El repartidor informa: "${updateText}"\n\n`;
-        updateMessage += `Estado actual: ${order.status}`;
-        
-        const customerPhone = order.phone.replace(/\D/g, ''); // Clean phone number
-        const whatsappUrl = `https://wa.me/521${customerPhone}?text=${encodeURIComponent(updateMessage)}`;
-        window.open(whatsappUrl, '_blank');
-        showNotification('Actualización enviada al cliente.', 'success');
-    }
-
-    function updateOrderStatus(orderId, newStatus) {
-        const index = orders.findIndex(o => o.id === orderId);
-        if (index > -1) {
-            orders[index].status = newStatus;
-            saveData();
-            showNotification(`Pedido ${orderId} actualizado.`, 'info');
-            renderAdminOrders();
-        }
-    }
-    
-    // Admin Appointments
-    function renderAdminAppointments() {
-        const container = document.getElementById('admin-citas');
-        if (!container) return;
-        container.innerHTML = `
-        <div class="bg-white p-6 rounded-xl shadow-lg border">
-            <h3 class="text-xl font-bold mb-6">Citas Agendadas</h3>
-            <div class="space-y-4">${appointments.length ? appointments.map(a => `
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="flex justify-between items-start">
-                         <div>
-                            <p><strong>Mascota:</strong> ${a.petName} (${a.petBreed}, ${a.petType})</p>
-                            <p><strong>Dueño:</strong> ${a.ownerName} | <strong>Tel:</strong> ${a.ownerPhone}</p>
-                            <p><strong>Fecha:</strong> ${a.date} a las ${a.time} hrs</p>
-                            <p><strong>Motivo:</strong> ${a.reason}</p>
-                            ${a.address ? `<p><strong>Dirección:</strong> ${a.address}</p>` : ''}
-                        </div>
-                        <button onclick="deleteAppointment(${a.id})" class="text-red-500 font-bold">X</button>
-                    </div>
-                </div>`).join('') : '<p class="text-center text-gray-500">No hay citas agendadas.</p>'}
-            </div>
-        </div>`;
-    }
-
-    function deleteAppointment(appointmentId) {
-        showConfirm('Eliminar Cita', '¿Estás seguro?', confirmed => {
-            if(confirmed) {
-                appointments = appointments.filter(a => a.id !== appointmentId);
-                saveData();
-                renderAdminAppointments();
-            }
-        });
-    }
-
-    // Admin Security
-    function renderAdminSecurity() {
-        const container = document.getElementById('admin-seguridad');
-        if (!container) return;
-        container.innerHTML = `
-        <div class="bg-white p-6 rounded-xl shadow-lg border max-w-md mx-auto">
-            <h3 class="text-xl font-bold mb-6">Cambiar Contraseña</h3>
-            <form id="change-password-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Nueva Contraseña</label>
-                    <input type="password" id="new-password" required class="w-full p-2 border rounded" minlength="4">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg">Guardar Contraseña</button>
-            </form>
-        </div>
-        `;
-        document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
-    }
-
-    function handleChangePassword(e) {
-        e.preventDefault();
-        const newPassword = document.getElementById('new-password').value;
-        if (newPassword && newPassword.length >= 4) {
-            adminPassword = newPassword;
-            saveData();
-            showNotification('Contraseña actualizada correctamente.', 'success');
-            e.target.reset();
-        } else {
-            showNotification('La contraseña debe tener al menos 4 caracteres.', 'error');
-        }
-    }
-
-    // --- DATA MANAGEMENT MODALS ---
-    function showExportModal() {
-        const dataStr = JSON.stringify({ products, orders, appointments, cart, adminPassword }, null, 2);
-        const modal = document.getElementById('data-modal');
-        modal.innerHTML = `
-        <div class="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">Exportar Datos</h3>
-                <button onclick="closeDataModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-            </div>
-            <p class="text-sm text-gray-600 mb-4">Copia este texto y guárdalo en un archivo para importarlo más tarde.</p>
-            <textarea readonly class="w-full flex-grow p-2 border rounded-lg bg-gray-50 font-mono text-xs">${dataStr}</textarea>
-            <button onclick="copyDataToClipboard()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg w-full">Copiar al portapapeles</button>
-        </div>`;
-        modal.classList.add('show');
-    }
-
-    function showImportModal() {
-        const modal = document.getElementById('data-modal');
-        modal.innerHTML = `
-        <div class="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">Importar Datos</h3>
-                <button onclick="closeDataModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-            </div>
-            <p class="text-sm text-gray-600 mb-4">Pega el texto que exportaste previamente aquí.</p>
-            <textarea id="import-data-textarea" class="w-full flex-grow p-2 border rounded-lg bg-gray-50 font-mono text-xs" placeholder="Pega tus datos aquí..."></textarea>
-            <button onclick="handleImportData()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full">Cargar Datos</button>
-        </div>`;
-        modal.classList.add('show');
-    }
-
-    function closeDataModal() {
-        document.getElementById('data-modal').classList.remove('show');
-    }
-
-    function copyDataToClipboard() {
-        const textarea = document.querySelector('#data-modal textarea');
-        textarea.select();
-        document.execCommand('copy');
-        showNotification('¡Datos copiados!', 'success');
-    }
-
-    function handleImportData() {
-        const textarea = document.getElementById('import-data-textarea');
-        const dataString = textarea.value.trim();
-        if (!dataString) {
-            showNotification('Error: El campo de texto está vacío. Pega tus datos.', 'error');
-            return;
-        }
-
-        try {
-            const data = JSON.parse(dataString);
-            if (data && data.products && data.orders && data.appointments && data.cart) {
-                products = data.products;
-                orders = data.orders;
-                appointments = data.appointments;
-                cart = data.cart;
-                adminPassword = data.adminPassword || 'password123';
-                saveData();
-                renderAll();
-                closeDataModal();
-                showNotification('¡Datos importados correctamente!', 'success');
-            } else {
-                showNotification('Error: El formato de los datos es incorrecto.', 'error');
-            }
-        } catch (e) {
-            showNotification('Error: El texto no es válido. Asegúrate de copiarlo todo.', 'error');
-            console.error("Error al importar:", e);
-        }
-    }
-
-
-    // --- UTILITY FUNCTIONS ---
-    function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
-    function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-
-    function showNotification(message, type = 'info') {
-        const div = document.createElement('div');
-        const styles = {
-            success: 'bg-green-500 text-white',
-            error: 'bg-red-500 text-white',
-            info: 'bg-blue-500 text-white'
-        };
-        div.className = `fixed top-20 right-4 z-[1100] p-4 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 ${styles[type]}`;
-        div.textContent = message;
-        document.body.appendChild(div);
-        setTimeout(() => div.classList.remove('translate-x-full'), 100);
-        setTimeout(() => {
-            div.classList.add('translate-x-full');
-            setTimeout(() => div.remove(), 300);
-        }, 3000);
-    }
-    
-    function showConfirm(title, message, callback) {
-        confirmCallback = callback;
-        const modal = document.getElementById('confirm-modal');
-        modal.innerHTML = `
-        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
-            <h3 class="text-xl font-bold mb-4">${title}</h3>
-            <p class="text-gray-600 mb-6">${message}</p>
-            <div class="flex justify-end gap-4">
-                <button onclick="handleConfirm(false)" class="bg-gray-200 px-6 py-2 rounded-lg">Cancelar</button>
-                <button onclick="handleConfirm(true)" class="bg-red-500 text-white px-6 py-2 rounded-lg">Confirmar</button>
-            </div>
-        </div>`;
-        modal.classList.add('show');
-    }
-
-    function handleConfirm(isConfirmed) {
-        if (confirmCallback) {
-            confirmCallback(isConfirmed);
-        }
-        document.getElementById('confirm-modal').classList.remove('show');
-    }
-    
-    // Close modals on outside click
-    ['cart-modal', 'checkout-modal', 'confirm-modal', 'edit-product-modal', 'data-modal'].forEach(id => {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) this.classList.remove('show');
+            </div>`;
+            document.getElementById('add-prod-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                const file = document.getElementById('np-file').files[0];
+                const img = file ? await processImage(file) : 'https://placehold.co/400?text=No+Image';
+                await window.addProductToDB({
+                    name: document.getElementById('np-name').value,
+                    price: Number(document.getElementById('np-price').value),
+                    category: document.getElementById('np-cat').value,
+                    description: document.getElementById('np-desc').value,
+                    image: img
+                });
+                e.target.reset();
             });
-        }
-    });
+        };
+
+        window.renderAdminOrders = () => {
+            document.getElementById('admin-envios').innerHTML = orders.length ? orders.map(o => `
+                <div class="bg-white p-4 rounded shadow mb-2 border-l-4 border-indigo-500">
+                    <div class="flex justify-between font-bold"><span>#${o.orderId || 'PEDIDO'}</span><span>$${o.total}</span></div>
+                    <div class="text-sm text-gray-600 my-1">${o.customer} - ${o.phone}</div>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="uppercase text-xs bg-gray-200 px-2 py-1 rounded font-bold">${o.status || 'nuevo'}</span>
+                        <div class="flex gap-2"><button onclick="window.updateOrderInDB('${o.id}', 'en-camino')" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">En Camino</button><button onclick="window.deleteOrderFromDB('${o.id}')" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">Borrar</button></div>
+                    </div>
+                </div>`).join('') : '<p class="text-gray-500">Sin pedidos recientes.</p>';
+        };
+
+        window.renderAdminAppointments = () => {
+             document.getElementById('admin-citas').innerHTML = appointments.length ? appointments.map(a => `
+                <div class="bg-white p-4 rounded shadow mb-2 border-l-4 border-green-500">
+                    <div class="font-bold">${a.pet} (${a.owner})</div>
+                    <div class="text-sm">${a.date} - ${a.time}</div>
+                    <div class="text-xs text-gray-500 mt-1">${a.reason}</div>
+                    <button onclick="window.deleteAppointmentFromDB('${a.id}')" class="text-red-500 text-xs mt-2 underline">Cancelar</button>
+                </div>`).join('') : '<p class="text-gray-500">Agenda libre.</p>';
+        };
+
+        window.showAdminTab = (tab, btn) => {
+            document.querySelectorAll('.admin-content').forEach(e => e.classList.add('hidden'));
+            document.getElementById(`admin-${tab}`).classList.remove('hidden');
+            document.querySelectorAll('.admin-tab').forEach(b => { b.classList.remove('bg-indigo-600','text-white'); b.classList.add('bg-white','text-gray-600'); });
+            btn.classList.remove('bg-white','text-gray-600'); btn.classList.add('bg-indigo-600','text-white');
+            if(tab === 'productos') window.renderAdminProducts();
+            if(tab === 'envios') window.renderAdminOrders();
+            if(tab === 'citas') window.renderAdminAppointments();
+        };
+
+        window.editProduct = (id) => {
+            const p = products.find(x => x.id === id);
+            if(!p) return;
+            const modal = document.getElementById('edit-product-modal');
+            
+            modal.innerHTML = `
+            <div class="bg-white p-6 rounded-xl max-w-md w-full mx-4 animate-[slideUp_0.3s_ease]">
+                <h3 class="font-bold text-lg mb-4">Editar Producto</h3>
+                <form id="edit-form" class="space-y-3">
+                    <div class="text-center mb-2">
+                        <img src="${p.image}" class="h-20 w-20 object-cover rounded mx-auto mb-2 border">
+                        <label class="block text-sm text-blue-600 cursor-pointer hover:underline">
+                            Cambiar Imagen
+                            <input type="file" id="ep-file" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+                    <input id="ep-name" value="${p.name}" placeholder="Nombre" class="w-full p-2 border rounded" required>
+                    <input id="ep-price" type="number" value="${p.price}" placeholder="Precio" class="w-full p-2 border rounded" required>
+                    <select id="ep-cat" class="w-full p-2 border rounded">
+                        <option value="alimento" ${p.category === 'alimento' ? 'selected' : ''}>Alimento</option>
+                        <option value="juguetes" ${p.category === 'juguetes' ? 'selected' : ''}>Juguetes</option>
+                        <option value="medicamentos" ${p.category === 'medicamentos' ? 'selected' : ''}>Medicamentos</option>
+                        <option value="accesorios" ${p.category === 'accesorios' ? 'selected' : ''}>Accesorios</option>
+                    </select>
+                    <textarea id="ep-desc" placeholder="Descripción" class="w-full p-2 border rounded">${p.description}</textarea>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" onclick="document.getElementById('edit-product-modal').classList.remove('show')" class="px-3 py-1 border rounded hover:bg-gray-50">Cancelar</button>
+                        <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+                    </div>
+                </form>
+            </div>`;
+            
+            modal.classList.add('show');
+            
+            document.getElementById('edit-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                const fileInput = document.getElementById('ep-file');
+                let imageToSave = p.image;
+
+                if (fileInput.files && fileInput.files[0]) {
+                    try {
+                        imageToSave = await processImage(fileInput.files[0]);
+                    } catch (err) {
+                        console.error("Error processing image", err);
+                    }
+                }
+
+                await window.updateProductInDB(id, { 
+                    name: document.getElementById('ep-name').value, 
+                    price: Number(document.getElementById('ep-price').value),
+                    category: document.getElementById('ep-cat').value, 
+                    description: document.getElementById('ep-desc').value,
+                    image: imageToSave
+                });
+                modal.classList.remove('show');
+            });
+        };
+
+        // Checkout Logic
+        window.showCheckoutForm = () => {
+            const modal = document.getElementById('checkout-modal');
+            modal.innerHTML = `<div class="bg-white p-6 rounded-xl max-w-md w-full mx-4 animate-[slideUp_0.3s_ease]"><h3 class="font-bold text-lg mb-4">Finalizar</h3><form id="checkout-form" class="space-y-3"><input id="c-name" placeholder="Nombre" class="w-full p-2 border rounded" required><input id="c-phone" placeholder="Teléfono" class="w-full p-2 border rounded" required><textarea id="c-addr" placeholder="Dirección" class="w-full p-2 border rounded" required></textarea><button type="submit" class="w-full bg-green-600 text-white py-3 rounded font-bold">Enviar Pedido</button></form><button onclick="document.getElementById('checkout-modal').classList.remove('show')" class="mt-2 text-gray-500 text-sm underline w-full">Cancelar</button></div>`;
+            modal.classList.add('show');
+            document.getElementById('checkout-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                const order = { orderId: 'VET'+Date.now().toString().slice(-4), customer: document.getElementById('c-name').value, phone: document.getElementById('c-phone').value, address: document.getElementById('c-addr').value, total: cart.reduce((s,i)=>s+(i.price*i.quantity),0), status: 'nuevo', items: cart };
+                
+                // Send Whatsapp
+                let msg = `Hola Zona Animal! Pedido ${order.orderId}: ${order.customer} (${order.phone}). Dirección: ${order.address}. Total: $${order.total}.`;
+                window.open(`https://wa.me/5212452070033?text=${encodeURIComponent(msg)}`, '_blank');
+                
+                await window.addOrderToDB(order);
+                cart = []; saveCart(); window.renderCart(); document.getElementById('checkout-modal').classList.remove('show'); window.toggleCart();
+            });
+        };
+        
+        // Appointment Logic
+        document.getElementById('appointment-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const appt = {
+                owner: document.getElementById('owner-name').value,
+                phone: document.getElementById('owner-phone').value,
+                pet: document.getElementById('pet-name').value,
+                reason: document.getElementById('appointment-reason').value,
+                date: document.getElementById('appointment-date').value,
+                time: document.getElementById('appointment-time').value
+            };
+            let msg = `Cita Veterinaria: ${appt.owner} con mascota ${appt.pet}. Motivo: ${appt.reason}. Fecha: ${appt.date} a las ${appt.time}.`;
+            window.open(`https://wa.me/5212452070033?text=${encodeURIComponent(msg)}`, '_blank');
+            await window.addAppointmentToDB(appt);
+            e.target.reset();
+        });
+
+        // Admin Login
+        document.getElementById('admin-login-form').addEventListener('submit', e => {
+            e.preventDefault();
+            if(document.getElementById('admin-username').value === 'admin' && document.getElementById('admin-password').value === 'password123') {
+                isAdminLoggedIn = true; localStorage.setItem('isAdmin', 'true'); window.renderAdminPanel();
+            } else window.showNotification('Datos incorrectos', 'error');
+        });
+        window.logoutAdmin = () => { isAdminLoggedIn = false; localStorage.removeItem('isAdmin'); window.renderAdminPanel(); };
+
+        // Helpers
+        window.showNotification = (msg, type) => {
+            const div = document.createElement('div'); div.className = `fixed top-20 right-4 px-6 py-3 rounded shadow-lg text-white z-[2000] animate-[slideUp_0.3s_ease] ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}`; div.textContent = msg; document.body.appendChild(div); setTimeout(() => div.remove(), 3000);
+        };
+        window.scrollToSection = (id) => document.getElementById(id)?.scrollIntoView({behavior: 'smooth'});
+        window.toggleMobileMenu = () => document.getElementById('mobile-menu').classList.toggle('hidden');
+        window.searchOrder = () => {
+             const id = document.getElementById('order-search').value; 
+             const o = orders.find(x => x.orderId == id || x.id == id);
+             const res = document.getElementById('order-result');
+             res.classList.remove('hidden');
+             res.innerHTML = o ? `<h3 class="font-bold">Pedido #${o.orderId}</h3><p>Estado: <span class="font-bold text-indigo-600 uppercase">${o.status}</span></p><p>Total: $${o.total}</p>` : '<p>No encontrado</p>';
+        };
+        window.handleReasonChange = () => {
+             const val = document.getElementById('appointment-reason').value;
+             document.getElementById('address-container').classList.toggle('hidden', !val.includes('Domicilio'));
+        };
+
+        // Image Compressor
+        const processImage = (file) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = () => {
+                    const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d');
+                    const scale = Math.min(500/img.width, 500/img.height);
+                    cvs.width = img.width * scale; cvs.height = img.height * scale;
+                    ctx.drawImage(img,0,0,cvs.width,cvs.height);
+                    resolve(cvs.toDataURL('image/jpeg', 0.7));
+                };
+            };
+        });
+
+        // Initial Seed (Solo si está vacío para evitar duplicados)
+        const seedData = async () => {
+             localStorage.setItem('seeded', 'true');
+             const defaults = [
+                {name:"Clean Guard Pipetas (40kg+)", price:280, category:"medicamentos", image:"https://m.media-amazon.com/images/I/71w-L+3-HlL._AC_SL1500_.jpg", description:"Para perros grandes"},
+                {name:"Berican Adulto (25kg)", price:590, category:"alimento", image:"https://m.media-amazon.com/images/I/61+v+M+g+JL._AC_SX425_.jpg", description:"Alimento completo"}
+             ];
+             defaults.forEach(d => window.addProductToDB(d));
+        };
+
+        // Render initial empty state
+        window.renderProducts();
+        window.renderCart();
+        window.renderAdminPanel();
+
     </script>
 </body>
 </html>
-
