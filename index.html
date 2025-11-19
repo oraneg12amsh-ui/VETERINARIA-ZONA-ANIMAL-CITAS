@@ -246,12 +246,23 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURACIÓN ---
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // --- CONFIGURACIÓN DE USUARIO ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCC-swKUQGU93xe_bc7Qts2nhFCji3ZeDs",
+          authDomain: "zona-animal-pedidos.firebaseapp.com",
+          projectId: "zona-animal-pedidos",
+          storageBucket: "zona-animal-pedidos.firebasestorage.app",
+          messagingSenderId: "1028482666526",
+          appId: "1:1028482666526:web:a136fa73b9b0d884389e0f",
+          measurementId: "G-F7VHGPFQD7"
+        };
+
+        // ID para guardar datos en la colección correcta
+        const appId = "zona-animal-pedidos";
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         // State
         let products = [];
@@ -265,11 +276,8 @@
         // --- AUTH & INIT ---
         const initAuth = async () => {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Usar autenticación anónima ya que es lo que tienes habilitado
+                await signInAnonymously(auth);
                 console.log("Conectado a la nube ☁️");
             } catch (error) {
                 console.error("Auth Error:", error);
@@ -305,11 +313,6 @@
                 if(loader) {
                     loader.style.opacity = '0';
                     setTimeout(() => loader.remove(), 500);
-                }
-                
-                // Seed if empty (Solo para demo)
-                if (products.length === 0 && !localStorage.getItem('seeded')) {
-                    seedData();
                 }
             }, (error) => console.error("Error productos:", error));
 
@@ -659,16 +662,6 @@
                 };
             };
         });
-
-        // Initial Seed (Solo si está vacío para evitar duplicados)
-        const seedData = async () => {
-             localStorage.setItem('seeded', 'true');
-             const defaults = [
-                {name:"Clean Guard Pipetas (40kg+)", price:280, category:"medicamentos", image:"https://m.media-amazon.com/images/I/71w-L+3-HlL._AC_SL1500_.jpg", description:"Para perros grandes"},
-                {name:"Berican Adulto (25kg)", price:590, category:"alimento", image:"https://m.media-amazon.com/images/I/61+v+M+g+JL._AC_SX425_.jpg", description:"Alimento completo"}
-             ];
-             defaults.forEach(d => window.addProductToDB(d));
-        };
 
         // Render initial empty state
         window.renderProducts();
