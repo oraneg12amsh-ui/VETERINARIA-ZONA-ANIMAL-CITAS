@@ -101,6 +101,7 @@
                     <button onclick="window.filterProducts('juguetes', this)" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-5 py-2 rounded-full text-sm font-medium transition-all border">Juguetes</button>
                     <button onclick="window.filterProducts('medicamentos', this)" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-5 py-2 rounded-full text-sm font-medium transition-all border">Medicamentos</button>
                     <button onclick="window.filterProducts('accesorios', this)" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-5 py-2 rounded-full text-sm font-medium transition-all border">Accesorios</button>
+                    <button onclick="window.filterProducts('producto', this)" class="filter-btn bg-white text-gray-600 hover:bg-gray-100 px-5 py-2 rounded-full text-sm font-medium transition-all border">Producto</button>
                 </div>
                 <div class="relative w-full md:w-auto">
                     <input type="text" id="search-product" oninput="window.searchProducts()" placeholder="Buscar producto..." class="w-full md:w-64 pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -236,9 +237,55 @@
         </div>
     </div>
 
+    <!-- Product Details Modal -->
+    <div id="product-details-modal" class="modal" onclick="window.closeProductDetails()">
+        <div class="bg-white rounded-2xl max-w-4xl w-full mx-4 overflow-hidden shadow-2xl flex flex-col md:flex-row relative animate-[fadeIn_0.3s_ease]" onclick="event.stopPropagation()">
+            <button onclick="window.closeProductDetails()" class="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full z-10 text-gray-600 hover:text-gray-900 font-bold transition-colors">✕</button>
+            
+            <div class="md:w-1/2 bg-gray-100 flex items-center justify-center p-4">
+                <img id="detail-image" src="" class="max-h-[400px] md:max-h-[500px] object-contain w-full rounded-lg shadow-sm" alt="Detalle del producto">
+            </div>
+            
+            <div class="md:w-1/2 p-8 flex flex-col">
+                <span id="detail-category" class="text-indigo-600 font-bold uppercase text-xs tracking-wider mb-2"></span>
+                <h2 id="detail-name" class="text-3xl font-bold text-gray-800 mb-4 leading-tight"></h2>
+                
+                <div class="bg-indigo-50 p-4 rounded-xl border-l-4 border-indigo-500 mb-6">
+                    <p id="detail-description" class="text-gray-700 leading-relaxed"></p>
+                </div>
+                
+                <div class="mt-auto pt-6 border-t border-gray-100 flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500 font-medium">Precio:</span>
+                        <span id="detail-price" class="text-4xl font-extrabold text-indigo-600"></span>
+                    </div>
+                    
+                    <button id="detail-add-btn" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 text-lg">
+                        Agregar al Carrito 🛒
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal -->
+    <div id="bulk-import-modal" class="modal">
+      <div class="bg-white p-6 rounded-xl max-w-2xl w-full mx-4 shadow-2xl animate-[fadeIn_0.3s_ease]">
+        <h3 class="font-bold text-xl mb-4 text-gray-800">Carga Masiva de Productos</h3>
+        <p class="text-sm text-gray-600 mb-4">La lista ya está precargada con 126 productos del PDF. ¡Solo dale a importar!</p>
+        <textarea id="bulk-json" class="w-full h-64 p-3 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Pega tu JSON aquí..."></textarea>
+        <div class="flex justify-end gap-3 mt-6">
+            <button onclick="document.getElementById('bulk-import-modal').classList.remove('show')" class="px-5 py-2 border rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            <button onclick="window.processBulkImport()" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md">Importar Productos</button>
+        </div>
+      </div>
+    </div>
+
     <div id="checkout-modal" class="modal"></div>
     <div id="confirm-modal" class="modal"></div>
     <div id="edit-product-modal" class="modal"></div>
+    <!-- Hidden file input for quick image upload -->
+    <input type="file" id="quick-image-upload" accept="image/*" class="hidden">
 
     <!-- FIREBASE MODULE -->
     <script type="module">
@@ -257,7 +304,6 @@
           measurementId: "G-F7VHGPFQD7"
         };
 
-        // ID para guardar datos en la colección correcta
         const appId = "zona-animal-pedidos";
 
         const app = initializeApp(firebaseConfig);
@@ -271,44 +317,44 @@
         let appointments = [];
         let currentFilter = 'todos';
         let isAdminLoggedIn = localStorage.getItem('isAdmin') === 'true';
-        let confirmCallback = null;
+        let quickUploadProductId = null; // Store ID for quick upload
         
+        // --- PRELOADED DATA ---
+        const pdfInventory = [{"name":"Dispensador Automático de Gravedad","price":180,"category":"accesorios","description":"Dispensador de plástico con depósito transparente de gran capacidad y tazón integrado."},{"name":"Bebedero Automático","price":180,"category":"accesorios","description":"Recipiente de plástico con sistema de dispensación de agua por gravedad."},{"name":"Bebedero Automático por Gravedad","price":180,"category":"accesorios","description":"Dispensador de agua de plástico blanco y transparente."},{"name":"RedKite Alimento Hámster","price":150,"category":"producto","description":"Alimento balanceado y granulado para la nutrición de hámsters."},{"name":"Collar Isabelino","price":200,"category":"accesorios","description":"Collar protector transparente (cono de la vergüenza)."},{"name":"Collar Isabelino de Protección","price":100,"category":"accesorios","description":"Cono de plástico protector."},{"name":"Collar Protector de Tela","price":150,"category":"accesorios","description":"Collar cónico de tela suave con estampado."},{"name":"Botín/Protector Textil","price":80,"category":"accesorios","description":"Accesorio protector textil cónico con diseño estampado."},{"name":"Pedigree y Whiskas (Sobre)","price":400,"category":"producto","description":"Bolsas de alimentos comerciales para perros y gatos."},{"name":"Dasner 16x Pet Care Adulto","price":330,"category":"producto","description":"Alimento balanceado para mascotas adultas (20 kg)."},{"name":"Cordón trenzado bicolor","price":50,"category":"accesorios","description":"Pequeño cordón o cuerda trenzada."},{"name":"Flourish Glue","price":150,"category":"producto","description":"Adhesivo de cianoacrilato para plantas acuáticas."},{"name":"Peanuts Bolsas para Desechos","price":50,"category":"accesorios","description":"Rollos de bolsas aromatizadas."},{"name":"REPTILELECTRIC Placa Térmica","price":350,"category":"accesorios","description":"Placa térmica de 6 Watts y 18x14 cm."},{"name":"BOYU Ceramic Ring CR-500","price":150,"category":"accesorios","description":"Anillos de cerámica porosa para filtración."},{"name":"Limpiador Magnético Acuario","price":300,"category":"accesorios","description":"Limpiador magnético flotante para cristales."},{"name":"Ganador BITES","price":20,"category":"producto","description":"Snack o premio para perros."},{"name":"Collar de Cuero","price":100,"category":"accesorios","description":"Correa de cuero ajustable de color marrón."},{"name":"Collar Estampado","price":100,"category":"accesorios","description":"Tira de nylon con diseño de conejos."},{"name":"Arnés Acolchado","price":100,"category":"accesorios","description":"Arnés de paseo con sección acolchada."},{"name":"LED XPERT Lámpara 35","price":250,"category":"accesorios","description":"Lámpara LED empaquetada."},{"name":"Arnés Rojo","price":90,"category":"accesorios","description":"Arnés de paseo de tela ajustable de color rojo."},{"name":"Arnés de Tela","price":80,"category":"accesorios","description":"Arnés de sujeción de tela roja."},{"name":"Arnés Camuflaje Gato","price":200,"category":"accesorios","description":"Arnés ajustable con diseño de camuflaje."},{"name":"Correa Extensible Kanapet","price":200,"category":"accesorios","description":"Correa retráctil de 3 metros."},{"name":"Correas/Arneses Nylon","price":90,"category":"accesorios","description":"Productos de sujeción de nylon."},{"name":"Collares Surtidos","price":80,"category":"accesorios","description":"Collares ajustables en diferentes colores."},{"name":"Collares Tejidos","price":60,"category":"accesorios","description":"Collares estrechos y coloridos con patrones."},{"name":"Chaleco Salvavidas Mediano","price":300,"category":"accesorios","description":"Chaleco flotante rojo con franjas blancas."},{"name":"Chaleco Perro CH","price":300,"category":"accesorios","description":"Chaleco rojo brillante con capucha."},{"name":"Difusor Aire Acuario","price":20,"category":"accesorios","description":"Piedras difusoras de aire."},{"name":"BIOPRO NitroBacter","price":100,"category":"producto","description":"Bacterias liquidas para acuarios."},{"name":"Vita-Flo","price":50,"category":"producto","description":"Fertilizante líquido para plantas acuáticas."},{"name":"Permanganato de Potasio","price":50,"category":"medicamentos","description":"Tratamiento desinfectante y antiparasitario."},{"name":"Acrivelit","price":50,"category":"medicamentos","description":"Tratamiento a base de Acriflavina."},{"name":"Pentabiocare","price":50,"category":"producto","description":"Acondicionador de agua líquido."},{"name":"Somac Vita-Fl","price":50,"category":"producto","description":"Suplemento líquido para plantas."},{"name":"Lomas Crystalize","price":50,"category":"producto","description":"Clarificador de agua para acuarios."},{"name":"LOMAS VERDE PLUS","price":50,"category":"producto","description":"Tratamiento líquido para el agua."},{"name":"Bettera Equipada","price":200,"category":"accesorios","description":"Acuario pequeño para peces Betta."},{"name":"Acuario (Pecera)","price":250,"category":"accesorios","description":"Tanque de vidrio rectangular."},{"name":"Kit Limpiador Acuario","price":300,"category":"accesorios","description":"Set de herramientas de limpieza."},{"name":"Betta Food (Prodac)","price":80,"category":"producto","description":"Alimento granulado para Betta."},{"name":"XOLOTINAS Juvenil","price":80,"category":"producto","description":"Alimento para ajolotes juveniles."},{"name":"Exotic's Erizos Diet","price":200,"category":"producto","description":"Alimento premium para erizos."},{"name":"Bettazul","price":40,"category":"producto","description":"Alimento en pellets para Betta."},{"name":"IKMAS Algae Discs","price":40,"category":"producto","description":"Alimento a base de algas en disco."},{"name":"TetraWeekend Block","price":100,"category":"producto","description":"Bloque de alimento de liberación lenta."},{"name":"Red para Acuario (Fina)","price":40,"category":"accesorios","description":"Red de malla fina con mango."},{"name":"Red Malla M","price":40,"category":"accesorios","description":"Accesorio con marco rígido y malla blanca."},{"name":"Red Acuario (Pequeña)","price":50,"category":"accesorios","description":"Pequeña red de malla fina."},{"name":"Lomas TEN Pond Stix","price":200,"category":"producto","description":"Alimento en forma de sticks."},{"name":"Calentador Sunny 25W","price":250,"category":"accesorios","description":"Calentador de inmersión de vidrio."},{"name":"Calentador 100W","price":300,"category":"accesorios","description":"Calentador sumergible de cristal."},{"name":"Filtro Sunny SPF-1200","price":300,"category":"accesorios","description":"Filtro de potencia para acuarios."},{"name":"Filtro Multiburbujas","price":100,"category":"accesorios","description":"Filtro de agua con efecto multiburbujas."},{"name":"Alimento Iguana Juvenil","price":200,"category":"producto","description":"Alimento fortificado para iguanas."},{"name":"Maternidad Flotante","price":200,"category":"accesorios","description":"Incubadora de plástico flotante."},{"name":"Transportadora","price":500,"category":"accesorios","description":"Jaula de transporte de plástico."},{"name":"VALSYN NF Sobres","price":60,"category":"medicamentos","description":"Antibiótico y expectorante."},{"name":"GASTRYL ORAL","price":250,"category":"medicamentos","description":"Inhibidor de la secreción gástrica."},{"name":"FORESTRO","price":250,"category":"medicamentos","description":"Estrógeno inyectable."},{"name":"Indigest Inyectable","price":770,"category":"medicamentos","description":"Restaurador gastro-hepático."},{"name":"Herbalvet T.A.","price":800,"category":"medicamentos","description":"Solución desinfectante concentrada."},{"name":"Herizul","price":200,"category":"medicamentos","description":"Antiséptico líquido de 1000 ml."},{"name":"VITAFORT-A Sobres","price":22,"category":"medicamentos","description":"Multivitamínico para aves."},{"name":"Aminotonic 500ml","price":200,"category":"medicamentos","description":"Solución de aminoácidos y vitaminas."},{"name":"ALFADEX Polvo","price":90,"category":"producto","description":"Insecticida-acaricida con Cipermetrina."},{"name":"Azul Fermark","price":50,"category":"medicamentos","description":"Solución cicatrizante y antiséptica."},{"name":"ARANDA Bebida Tos","price":200,"category":"medicamentos","description":"Solución oral contra la tos."},{"name":"Calfon Fuerte","price":400,"category":"medicamentos","description":"Solución inyectable de calcio."},{"name":"NAPZIN","price":400,"category":"medicamentos","description":"Solución inyectable de Meglumina de Flunixin."},{"name":"L-Vermizol Vitaminado","price":190,"category":"medicamentos","description":"Antiparasitario y vitamínico."},{"name":"Vitamina K Iny","price":500,"category":"medicamentos","description":"Solución inyectable de Vitamina K."},{"name":"Megluxyn-V","price":300,"category":"medicamentos","description":"Antiinflamatorio inyectable."},{"name":"Vigantol ADE Fuerte","price":350,"category":"medicamentos","description":"Concentrado vitamínico inyectable."},{"name":"Iver+ADE NRV","price":128,"category":"medicamentos","description":"Ivermectina con Vitaminas ADE."},{"name":"Ener-Jet B Complex","price":150,"category":"medicamentos","description":"Vitaminas del Complejo B."},{"name":"Vitamina ADE","price":170,"category":"medicamentos","description":"Solución inyectable de vitaminas A, D, E."},{"name":"Sural","price":500,"category":"medicamentos","description":"Sedante y tranquilizante inyectable."},{"name":"Super Flumi-Strep","price":300,"category":"medicamentos","description":"Suspensión antibiótica reforzada."},{"name":"Dexa-Jet NRV","price":300,"category":"medicamentos","description":"Solución corticosteroide estéril."},{"name":"STOP-ON","price":200,"category":"medicamentos","description":"Antidiarreico en suspensión oral."},{"name":"Collar Antipulgas Gato","price":200,"category":"producto","description":"Collar antiparasitario Nobleza."},{"name":"Training Pads 14pz","price":150,"category":"producto","description":"Almohadillas absorbentes para entrenamiento."},{"name":"Oleo-Lax Gel","price":150,"category":"medicamentos","description":"Laxante oral herbolario."},{"name":"Dorso Pet Guard Gato","price":280,"category":"medicamentos","description":"Ectoparasiticida spot-on."},{"name":"FRONPet XL","price":280,"category":"medicamentos","description":"Pipeta antiparasitaria >40kg."},{"name":"FRONPet M","price":300,"category":"medicamentos","description":"Pipeta antiparasitaria 10-20kg."},{"name":"FRONPet L","price":300,"category":"medicamentos","description":"Pipeta antiparasitaria 20-40kg."},{"name":"Clean Guard XL","price":300,"category":"medicamentos","description":"Antiparasitario >40kg."},{"name":"Revolution Plus Gato","price":280,"category":"medicamentos","description":"Solución tópica 0.5ml."},{"name":"Revolution PLUS Caja","price":800,"category":"medicamentos","description":"Solución tópica caja completa."},{"name":"Equipasta","price":290,"category":"medicamentos","description":"Pasta oral de Ivermectina."},{"name":"Actuol 4%","price":100,"category":"medicamentos","description":"Antiparasitario en polvo."},{"name":"Giardicox NRV","price":27,"category":"medicamentos","description":"Tableta para infecciones parasitarias."},{"name":"Giardicox NRV Caja","price":580,"category":"medicamentos","description":"Caja de tabletas antiparasitarias."},{"name":"Meloxi Pets 1mg","price":27,"category":"medicamentos","description":"Tableta antiinflamatoria."},{"name":"Meloxi Pets Caja","price":500,"category":"medicamentos","description":"Caja de tabletas Meloxicam."},{"name":"Fluvi Jet Plus L.A.","price":300,"category":"medicamentos","description":"Medicamento de larga acción."},{"name":"Doxi Pets 100mg","price":27,"category":"medicamentos","description":"Tableta de Doxiciclina."},{"name":"Doxi Pets Caja","price":500,"category":"medicamentos","description":"Caja de Doxiciclina."},{"name":"Azulvet Spray","price":90,"category":"medicamentos","description":"Spray antiséptico y cicatrizante."},{"name":"Sanitor Forte","price":100,"category":"medicamentos","description":"Solución antiséptica tópica."},{"name":"Aluspray","price":580,"category":"medicamentos","description":"Spray cicatrizante de aluminio."},{"name":"Lepecid Spray","price":200,"category":"medicamentos","description":"Spray antiséptico veterinario."},{"name":"TOPAZONE 250ml","price":290,"category":"medicamentos","description":"Aerosol antimicrobiano."},{"name":"TOPAZONE NF 400ml","price":400,"category":"medicamentos","description":"Spray tópico con Florfenicol."},{"name":"Jabón Perro Consentido","price":60,"category":"producto","description":"Jabón antiparasitario."},{"name":"Omepra Jet NRV","price":360,"category":"medicamentos","description":"Omeprazol inyectable."},{"name":"Otic","price":190,"category":"medicamentos","description":"Solución ótica."},{"name":"Prodol Pets Plus","price":290,"category":"medicamentos","description":"Solución oral antiparasitaria."},{"name":"Alin Depot","price":200,"category":"medicamentos","description":"Suspensión inyectable antiinflamatoria."},{"name":"RESPAIRE Tabletas","price":300,"category":"medicamentos","description":"Mucocinético y expectorante."},{"name":"Enroxil 5%","price":130,"category":"medicamentos","description":"Antibiótico Enrofloxacina."},{"name":"Nutriplus Tabs","price":490,"category":"medicamentos","description":"Suplemento nutricional."},{"name":"BRAVO Shampoo","price":250,"category":"medicamentos","description":"Champú antiparasitario."},{"name":"BRAVO Spray","price":290,"category":"medicamentos","description":"Spray ectoparasiticida."},{"name":"ESCUDERM Spray","price":280,"category":"medicamentos","description":"Spray dermatológico."},{"name":"Nutri-Plus Gel","price":580,"category":"medicamentos","description":"Suplemento energético en gel."},{"name":"Complet Plus Gatos","price":300,"category":"medicamentos","description":"Suspensión oral para gatos."},{"name":"Gentanazol Spray","price":280,"category":"medicamentos","description":"Solución tópica dermatológica."},{"name":"Regepil","price":580,"category":"medicamentos","description":"Spray regenerador cutáneo."},{"name":"Energy Pets Gel","price":350,"category":"medicamentos","description":"Gel estimulante del apetito."},{"name":"Stop Jet NRV","price":290,"category":"medicamentos","description":"Antidiarreico líquido."},{"name":"Shield Out","price":350,"category":"medicamentos","description":"Tableta masticable de larga duración."}];
+
         // --- AUTH & INIT ---
         const initAuth = async () => {
             try {
-                // Usar autenticación anónima ya que es lo que tienes habilitado
                 await signInAnonymously(auth);
                 console.log("Conectado a la nube ☁️");
+                // Preload textarea
+                const bulkArea = document.getElementById('bulk-json');
+                if(bulkArea) bulkArea.value = JSON.stringify(pdfInventory, null, 2);
             } catch (error) {
                 console.error("Auth Error:", error);
                 showNotification("Error de conexión", "error");
             }
         };
 
-        // Start Auth First
         initAuth();
 
-        // Only Setup Listeners When Auth is Confirmed
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 setupListeners();
             }
         });
 
-        // --- FIRESTORE LISTENERS (REAL-TIME) ---
+        // --- FIRESTORE LISTENERS ---
         const setupListeners = () => {
-            // Using simple collection refs without complex queries to avoid index errors
             const productsRef = collection(db, 'artifacts', appId, 'public', 'data', 'products');
             const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
             const apptsRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
 
-            // Escuchar Productos
             onSnapshot(productsRef, (snapshot) => {
                 products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                window.renderProducts(); // Renderizar al recibir datos
+                window.renderProducts();
                 if(isAdminLoggedIn) window.renderAdminProducts();
                 
-                // Remove loader safely
                 const loader = document.getElementById('loader');
                 if(loader) {
                     loader.style.opacity = '0';
@@ -316,13 +362,11 @@
                 }
             }, (error) => console.error("Error productos:", error));
 
-            // Escuchar Pedidos
             onSnapshot(ordersRef, (snapshot) => {
                 orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 if(isAdminLoggedIn) window.renderAdminOrders();
             }, (error) => console.error("Error pedidos:", error));
 
-            // Escuchar Citas
             onSnapshot(apptsRef, (snapshot) => {
                 appointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 if(isAdminLoggedIn) window.renderAdminAppointments();
@@ -334,7 +378,6 @@
             try {
                 if(!auth.currentUser) return;
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), productData);
-                window.showNotification("Producto guardado en la nube", "success");
             } catch (e) { console.error(e); window.showNotification("Error al guardar", "error"); }
         };
 
@@ -379,9 +422,31 @@
             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'appointments', id));
         };
 
-        // --- UTILS EXPOSED TO WINDOW ---
+        // --- UTILS ---
         
-        // Products
+        window.showProductDetails = (id) => {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+
+            document.getElementById('detail-image').src = product.image || 'https://placehold.co/400x300?text=Sin+Imagen';
+            document.getElementById('detail-category').textContent = product.category;
+            document.getElementById('detail-name').textContent = product.name;
+            document.getElementById('detail-description').textContent = product.description;
+            document.getElementById('detail-price').textContent = `$${product.price}`;
+            
+            const btn = document.getElementById('detail-add-btn');
+            btn.onclick = () => {
+                window.addToCart(product.id);
+                window.closeProductDetails();
+            };
+
+            document.getElementById('product-details-modal').classList.add('show');
+        };
+
+        window.closeProductDetails = () => {
+            document.getElementById('product-details-modal').classList.remove('show');
+        };
+
         window.renderProducts = () => {
             const grid = document.getElementById('products-grid');
             const searchTerm = document.getElementById('search-product')?.value.toLowerCase() || '';
@@ -389,13 +454,16 @@
             if (searchTerm) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
 
             grid.innerHTML = filtered.length ? filtered.map(product => `
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden card-hover flex flex-col h-full">
-                    <div class="relative pt-[75%] bg-gray-100">
-                        <img src="${product.image}" onerror="this.src='https://placehold.co/400x300?text=Sin+Imagen'" class="absolute top-0 left-0 w-full h-full object-cover">
-                        <span class="absolute top-3 right-3 bg-white/90 px-2 py-1 rounded-lg text-xs font-bold text-indigo-600 uppercase shadow-sm">${product.category}</span>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden card-hover flex flex-col h-full group">
+                    <div class="relative pt-[75%] bg-gray-100 cursor-pointer overflow-hidden" onclick="window.showProductDetails('${product.id}')">
+                        <img src="${product.image}" onerror="this.src='https://placehold.co/400x300?text=Sin+Imagen'" class="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                        <span class="absolute top-3 right-3 bg-white/90 px-2 py-1 rounded-lg text-xs font-bold text-indigo-600 uppercase shadow-sm z-10">${product.category}</span>
                     </div>
                     <div class="p-5 flex flex-col flex-grow">
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">${product.name}</h3>
+                        <h3 class="text-lg font-bold text-gray-800 mb-2 cursor-pointer hover:text-indigo-600 transition-colors" onclick="window.showProductDetails('${product.id}')">${product.name}</h3>
                         <p class="text-gray-500 text-sm mb-4 line-clamp-2 flex-grow">${product.description}</p>
                         <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
                             <span class="text-2xl font-extrabold text-indigo-600">$${product.price}</span>
@@ -414,7 +482,6 @@
         
         window.searchProducts = () => window.renderProducts();
 
-        // Cart (Local Only)
         window.toggleCart = () => document.body.classList.toggle('cart-open');
         
         window.addToCart = (id) => {
@@ -452,10 +519,69 @@
             }
         };
 
-        // Admin Logic
+        // Quick Image Upload Logic
+        window.triggerQuickUpload = (id) => {
+            quickUploadProductId = id;
+            document.getElementById('quick-image-upload').click();
+        };
+
+        document.getElementById('quick-image-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file && quickUploadProductId) {
+                try {
+                    window.showNotification("Subiendo imagen...", "info");
+                    const img = await processImage(file);
+                    await window.updateProductInDB(quickUploadProductId, { image: img });
+                    quickUploadProductId = null; // Reset
+                    e.target.value = ''; // Reset input
+                } catch(err) {
+                    window.showNotification("Error al subir imagen", "error");
+                }
+            }
+        });
+
+        // Bulk Import Logic
+        window.processBulkImport = async () => {
+            const text = document.getElementById('bulk-json').value;
+            try {
+                const items = JSON.parse(text);
+                if(!Array.isArray(items)) throw new Error("El formato debe ser una lista [...]");
+                
+                window.showNotification("Iniciando carga masiva...", "info");
+                let count = 0;
+                // Using Promise.all for speed, but enforcing simple image placeholder
+                const promises = items.map(item => {
+                    if(item.name && item.price) {
+                        count++;
+                        return window.addProductToDB({
+                            name: item.name,
+                            price: Number(item.price),
+                            category: item.category || 'otros',
+                            description: item.description || '',
+                            // Use a distinctive placeholder for items needing images
+                            image: item.image || 'https://placehold.co/400x300?text=Subir+Foto' 
+                        });
+                    }
+                });
+                
+                await Promise.all(promises);
+                window.showNotification(`${count} productos importados!`, 'success');
+                document.getElementById('bulk-import-modal').classList.remove('show');
+                // No clearing value so user can retry if needed or see what they pasted
+            } catch(e) {
+                alert("Error en el JSON: " + e.message);
+            }
+        };
+
+        // Admin Logic Update
         window.renderAdminPanel = () => {
-            if(!isAdminLoggedIn) { document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('admin-panel').classList.add('hidden'); return; }
-            document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-panel').classList.remove('hidden');
+            if(!isAdminLoggedIn) { 
+                document.getElementById('admin-login').classList.remove('hidden'); 
+                document.getElementById('admin-panel').classList.add('hidden'); 
+                return; 
+            }
+            document.getElementById('admin-login').classList.add('hidden'); 
+            document.getElementById('admin-panel').classList.remove('hidden');
             window.renderAdminProducts();
         };
 
@@ -467,17 +593,43 @@
                     <form id="add-prod-form" class="space-y-3">
                         <input id="np-name" placeholder="Nombre" class="w-full p-2 border rounded" required>
                         <input id="np-price" type="number" placeholder="Precio" class="w-full p-2 border rounded" required>
-                        <select id="np-cat" class="w-full p-2 border rounded"><option value="alimento">Alimento</option><option value="juguetes">Juguetes</option><option value="medicamentos">Medicamentos</option><option value="accesorios">Accesorios</option></select>
+                        <select id="np-cat" class="w-full p-2 border rounded">
+                            <option value="alimento">Alimento</option>
+                            <option value="juguetes">Juguetes</option>
+                            <option value="medicamentos">Medicamentos</option>
+                            <option value="accesorios">Accesorios</option>
+                            <option value="producto">Producto</option>
+                        </select>
                         <input type="file" id="np-file" accept="image/*" class="w-full text-sm">
                         <textarea id="np-desc" placeholder="Descripción" class="w-full p-2 border rounded"></textarea>
                         <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Guardar en Nube</button>
                     </form>
+                    <div class="mt-4 pt-4 border-t">
+                        <button onclick="document.getElementById('bulk-import-modal').classList.add('show')" class="w-full text-indigo-600 font-bold hover:underline flex items-center justify-center gap-2">
+                            <span>⚡ Carga Masiva JSON</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="lg:col-span-2 space-y-2">
-                    ${products.map(p => `<div class="flex justify-between items-center bg-white p-3 rounded border shadow-sm">
-                        <div class="flex gap-3 items-center"><img src="${p.image}" class="w-10 h-10 rounded object-cover"><div><div class="font-bold">${p.name}</div><div class="text-xs">$${p.price}</div></div></div>
-                        <div class="flex gap-2"><button onclick="window.editProduct('${p.id}')" class="text-blue-500">✏️</button><button onclick="window.deleteProductFromDB('${p.id}')" class="text-red-500">🗑️</button></div>
-                    </div>`).join('')}
+                    ${products.map(p => {
+                        const isPlaceholder = !p.image || p.image.includes('placehold.co');
+                        return `<div class="flex justify-between items-center bg-white p-3 rounded border shadow-sm group">
+                        <div class="flex gap-3 items-center">
+                            <div class="relative cursor-pointer" onclick="window.triggerQuickUpload('${p.id}')" title="Clic para cambiar imagen">
+                                <img src="${p.image}" class="w-12 h-12 rounded object-cover ${isPlaceholder ? 'opacity-70' : ''}">
+                                ${isPlaceholder ? '<div class="absolute inset-0 flex items-center justify-center bg-black/20 rounded text-xs text-white font-bold">+Foto</div>' : ''}
+                                <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center rounded text-white text-xs">Editar</div>
+                            </div>
+                            <div>
+                                <div class="font-bold">${p.name}</div>
+                                <div class="text-xs text-gray-500">$${p.price} | ${p.category}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="window.editProduct('${p.id}')" class="text-blue-500 p-2 hover:bg-blue-50 rounded">✏️</button>
+                            <button onclick="window.deleteProductFromDB('${p.id}')" class="text-red-500 p-2 hover:bg-red-50 rounded">🗑️</button>
+                        </div>
+                    </div>`}).join('')}
                 </div>
             </div>`;
             document.getElementById('add-prod-form').addEventListener('submit', async e => {
@@ -491,6 +643,7 @@
                     description: document.getElementById('np-desc').value,
                     image: img
                 });
+                window.showNotification("Producto guardado", "success");
                 e.target.reset();
             });
         };
@@ -550,6 +703,7 @@
                         <option value="juguetes" ${p.category === 'juguetes' ? 'selected' : ''}>Juguetes</option>
                         <option value="medicamentos" ${p.category === 'medicamentos' ? 'selected' : ''}>Medicamentos</option>
                         <option value="accesorios" ${p.category === 'accesorios' ? 'selected' : ''}>Accesorios</option>
+                        <option value="producto" ${p.category === 'producto' ? 'selected' : ''}>Producto</option>
                     </select>
                     <textarea id="ep-desc" placeholder="Descripción" class="w-full p-2 border rounded">${p.description}</textarea>
                     <div class="flex justify-end gap-2">
